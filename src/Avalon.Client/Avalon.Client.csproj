@@ -74,7 +74,6 @@
 
   <ItemGroup>
     <PackageReference Include="Argus.Core" Version="2020.11.21.1" />
-    <PackageReference Include="AvalonEdit" Version="6.0.1" />
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.0" />
     <PackageReference Include="ModernWpfUI" Version="0.9.2" />
@@ -86,6 +85,7 @@
     <ProjectReference Include="..\Avalon.Common\Avalon.Common.csproj" />
     <ProjectReference Include="..\Avalon.MoonSharp\Avalon.MoonSharp.csproj" />
     <ProjectReference Include="..\Avalon.SQLite\Avalon.Sqlite.csproj" />
+    <ProjectReference Include="..\ICSharpCode.AvalonEdit\ICSharpCode.AvalonEdit.csproj" />
   </ItemGroup>
 
   <ItemGroup>
