@@ -153,7 +153,8 @@
             <CheckBox IsChecked="{Binding IsVisible,UpdateSourceTrigger=PropertyChanged}" Margin="0,5,0,0">
                 <TextBlock Text="Visible in Variable Repeater" FontSize="14" Foreground="White"></TextBlock>
             </CheckBox>
-        </ui:SimpleStackPanel>
 
+            <local:AvalonLuaEditor x:Name="LuaEditor" />
+        </ui:SimpleStackPanel>
     </Grid>
 </UserControl>    

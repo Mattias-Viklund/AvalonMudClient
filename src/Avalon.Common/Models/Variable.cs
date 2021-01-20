@@ -170,6 +170,5 @@ namespace Avalon.Common.Models
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-
     }
 }

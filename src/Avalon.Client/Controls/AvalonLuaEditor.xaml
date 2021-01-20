@@ -17,6 +17,15 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Background="#171717" Orientation="Horizontal">
+            <Button Click="ButtonSaveLua_Click"
+                    Background="#171717" 
+                    Margin="0,0,0,0" 
+                    ui:ControlHelper.CornerRadius="0">
+                <StackPanel Orientation="Horizontal">
+                    <iconPacks:PackIconMaterial Kind="ContentSave" Foreground="CornflowerBlue" Margin="0,2,0,0" />
+                    <TextBlock FontFamily="Segoe UI" Foreground="#DDDDDD" Margin="5,0,0,0">Save</TextBlock>
+                </StackPanel>
+            </Button>
             <Button Click="ButtonRunLua_OnClick"
                     Background="#171717" 
                     Margin="0,0,0,0" 

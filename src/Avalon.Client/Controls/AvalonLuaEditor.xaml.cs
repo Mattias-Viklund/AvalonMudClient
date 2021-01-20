@@ -1,5 +1,7 @@
 ﻿using System;
+using Avalon.Extensions;
 using Avalon.Lua;
+using Argus.Extensions;
 using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.CodeCompletion;
 using ICSharpCode.AvalonEdit.Highlighting;
@@ -21,6 +23,18 @@ namespace Avalon.Controls
         /// Used for auto completion with Lua.
         /// </summary>
         CompletionWindow _completionWindow;
+
+        /// <summary>
+        /// A reference to the object that the Lua editor should save to when save
+        /// is clicked.
+        /// </summary>
+        public object SaveObject { get; set; }
+
+        /// <summary>
+        /// The name of the property that the Lua editor should save to when save
+        /// is clicked.
+        /// </summary>
+        public string SaveProperty { get; set; }
 
         public AvalonLuaEditor()
         {
@@ -202,6 +216,23 @@ namespace Avalon.Controls
         private void ButtonInfo_OnClick(object sender, RoutedEventArgs e)
         {
             _ = App.MainWindow.Interp.Send("#lua-debug", true, false);
+        }
+
+        private void ButtonSaveLua_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.SaveObject == null || string.IsNullOrWhiteSpace(this.SaveProperty))
+            {
+                return;
+            }
+
+            try
+            {
+                this.SaveObject.Set(this.SaveProperty, this.Editor.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
     }
 }
