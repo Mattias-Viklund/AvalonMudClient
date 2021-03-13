@@ -10,11 +10,13 @@
     <PackageProjectUrl>https://github.com/blakepell/AvalonMudClient</PackageProjectUrl>
     <RepositoryUrl>https://github.com/blakepell/AvalonMudClient</RepositoryUrl>
     <AssemblyVersion>2021.2.18.1</AssemblyVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Argus.Core" Version="2020.11.21.1" />
+    <PackageReference Include="Argus.Core" Version="2021.3.7.1" />
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="ZString" Version="2.3.1" />
   </ItemGroup>
 
 </Project>

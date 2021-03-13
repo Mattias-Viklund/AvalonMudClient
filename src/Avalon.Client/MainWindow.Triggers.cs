@@ -1,6 +1,19 @@
-﻿using System;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using System;
+using System.Linq;
+using Avalon.Colors;
 using Avalon.Common.Colors;
 using Avalon.Common.Models;
+using Avalon.Extensions;
+using Cysharp.Text;
 
 namespace Avalon
 {
@@ -28,19 +41,121 @@ namespace Avalon
                 return;
             }
 
+            #region "ReplacementTriggers"
+
+            // Replacement Triggers: These will either do a simple replacement on the line or execute a Lua script
+            // that will return a string value that will become the new line.  For performance we allow this to be turned
+            // off in the settings.
+            if (App.Settings.ProfileSettings.ReplacementTriggersEnabled && App.Settings.ProfileSettings.ReplacementTriggerList.Any())
+            {
+                bool found = false;
+                var sb2 = ZString.CreateStringBuilder();
+
+                foreach (var trigger in App.Settings.ProfileSettings.ReplacementTriggerList)
+                {
+                    if (!trigger.Enabled)
+                    {
+                        continue;
+                    }
+
+                    // Simple replacement can go ahead and flop %1.. variables in, the Lua version shouldn't
+                    // do that in IsMatch as it will pass those variables to Lua which should handle them.
+                    var match = trigger.IsMatch(line.Text);
+
+                    if (match.TrySuccess())
+                    {
+                        // We know if it's a success and it's found hasn't been set yet that we will need
+                        // to process it AND the StringBuilder needs to be populated because this is the
+                        // first match (of potentially more).  No point in populating the StringBuilder until
+                        // we know we're going to need it.
+                        if (!found)
+                        {
+                            sb2.AppendLine(line.Text);
+                        }
+
+                        found = true;
+
+                        // If lua function is available, run it, otherwise, do the processed replacement
+                        if (string.IsNullOrWhiteSpace(trigger.OnMatchEvent))
+                        {
+                            sb2.Replace(match.Value, trigger.ProcessedReplacement);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                // Create our param list to pass to the cached Lua function.
+                                var paramList = new string[match.Groups.Count + 1];
+                                paramList[0] = line.Text;
+
+                                for (int i = 1; i < match.Groups.Count; i++)
+                                {
+                                    paramList[i] = match.Groups[i].Value;
+                                }
+
+                                // The Lua was changed, update it and then flag it as not changed.
+                                if (trigger.LuaScript.Updated)
+                                {
+                                    Interp.LuaCaller.LoadSharedScript(trigger.LuaScript.Code, trigger.Id);
+                                    trigger.LuaScript.Updated = false;
+                                }
+
+                                // This function is wrapped around the Lua the user provides.  It accepts a varargs (...) and
+                                // the function can select(1, ...) to get the values we pass in.
+                                var luaResult = Interp.LuaCaller.ExecuteShared(trigger.LuaScript.FunctionName, paramList);
+
+                                if (!luaResult.IsNil())
+                                {
+                                    sb2.Replace(match.Value, luaResult.String);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                // If an error occurs, make the found false so it doesn't replace anything with a null or empty.
+                                App.Conveyor.EchoError("An error occurred executing Lua on a replacement trigger.");
+                                App.Conveyor.EchoError(ex.Message);
+                                found = false;
+                            }
+                        }
+                    }
+                }
+
+                if (found)
+                {
+                    // Since looking at the document text creates a string every time, we're going to try to look at only the 
+                    // last line plus the line terminator, since this should be processed right after a line is rendered to the
+                    // terminal should work (because creating a 50,000 line string every pass is a not great approach).
+                    int pos = Math.Clamp(GameTerminal.Document.TextLength - line.FormattedText.Length - 2, 0, GameTerminal.Document.TextLength);
+                    int start = GameTerminal.Document.LastIndexOf(line.FormattedText, pos, GameTerminal.Document.TextLength - pos, StringComparison.Ordinal);
+
+                    // Colorize, then remove 1 for the line ending.
+                    // TODO if entire line is removed it messes up the gag.. figure that out.
+                    if (start >= 0)
+                    {
+                        Colorizer.MudToAnsiColorCodes(ref sb2);
+                        this.GameTerminal.Document.Remove(start, line.FormattedText.Length + 1);
+                        this.GameTerminal.Document.Insert(start, sb2.ToString());
+                    }
+                }
+
+                // Return the ZString StringBuilder via Dispose.
+                sb2.Dispose();
+            }
+            #endregion
+
             // Go through the immutable system triggers, system triggers are silent in that
             // they won't echo to the terminal window, they also don't adhere to attributes like
             // character or enabled.  These can and will have CLR implementations and can be loaded
             // from other DLL's as plugins.  System triggers are also unique in that they are designed
             // to be loaded from a plugin and they don't save their state in the profile.
-            foreach (var item in App.SystemTriggers)
+            foreach (var item in App.InstanceGlobals.SystemTriggers)
             {
                 // Skip it if it's not enabled.
                 if (!item.Enabled)
                 {
                     continue;
                 }
-                
+
                 if (item.IsMatch(line.Text))
                 {
                     // Run any CLR that might exist.
@@ -127,22 +242,10 @@ namespace Avalon
             }
 
             // Go through the TriggerList which are user defined triggers
-            foreach (var item in App.Settings.ProfileSettings.TriggerList)
+            foreach (var item in App.Settings.ProfileSettings.TriggerList.EnabledEnumerable())
             {
-                // Skip it if it's not enabled.
-                if (!item.Enabled)
-                {
-                    continue;
-                }
-                
                 // Skip it if it's not global or for this character.
                 if (!string.IsNullOrWhiteSpace(item.Character) && item.Character != App.Conveyor.GetVariable("Character"))
-                {
-                    continue;
-                }
-
-                // If there is no pattern skip it, we don't want to send thousands of commands on empty patterns.
-                if (string.IsNullOrWhiteSpace(item.Pattern))
                 {
                     continue;
                 }
@@ -169,10 +272,26 @@ namespace Avalon
                         // If it has text but it's not lua, send it to the interpreter.
                         await Interp.Send(item.ProcessedCommand, false, false);
                     }
-                    else if (!string.IsNullOrEmpty(item.ProcessedCommand) && item.IsLua)
+                    else if (item.IsLua)
                     {
-                        // If it has text and it IS lua, send it to the LUA engine.
-                        await Interp.LuaCaller.ExecuteAsync(item.ProcessedCommand);
+                        // Create our param list to pass to the cached Lua function.
+                        var paramList = new string[item.Match.Groups.Count + 1];
+                        paramList[0] = line.Text;
+
+                        for (int i = 1; i < item.Match.Groups.Count; i++)
+                        {
+                            paramList[i] = item.Match.Groups[i].Value;
+                        }
+
+                        // See if the script has been updated since it's last run, if it has, re-load it and
+                        // then toggle the flag saying it's not updated.
+                        if (item.LuaScript.Updated)
+                        {
+                            Interp.LuaCaller.LoadSharedScript(item.LuaScript.Code, item.Identifier);
+                            item.LuaScript.Updated = false;
+                        }
+
+                        var luaResult = Interp.LuaCaller.ExecuteShared(item.LuaScript.FunctionName, paramList);
                     }
 
                     // Check if we're supposed to move this line somewhere else.
@@ -243,7 +362,6 @@ namespace Avalon
 
                         return;
                     }
-
                 }
             }
         }

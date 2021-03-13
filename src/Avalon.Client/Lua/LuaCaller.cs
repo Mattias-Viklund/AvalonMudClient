@@ -1,4 +1,13 @@
-﻿using System;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
@@ -28,6 +37,11 @@ namespace Avalon.Lua
         /// The number of Lua scripts that have been executed in this session.
         /// </summary>
         public int LuaScriptsRun { get; set; } = 0;
+
+        /// <summary>
+        /// The number of Lua scripts that were run from the cache.
+        /// </summary>
+        public int LuaScriptsRunFromCache { get; set; } = 0;
 
         /// <summary>
         /// The number of Lua scripts that have had an error.
@@ -67,6 +81,11 @@ namespace Avalon.Lua
         private readonly object _lockObject = new object();
 
         /// <summary>
+        /// A shared <see cref="Script"/> object to allow for reuse of functions.
+        /// </summary>
+        public Script SharedScript;
+
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="interp"></param>
@@ -74,15 +93,18 @@ namespace Avalon.Lua
         {
             _interpreter = interp;
             _random = new Random();
-            
+
             this.LuaGlobalVariables = new LuaGlobalVariables();
 
             // The CLR types we want to expose to Lua need to be registered before UserData.Create
             // can be called.  If they're not registered UserData.Create will return a null.
             UserData.RegisterType<LuaCommands>();
             UserData.RegisterType<LuaGlobalVariables>();
-            
+
             _luaCmds = UserData.Create(new LuaCommands(_interpreter, _random));
+
+            // Setup the shared script that will allow for function reuse.
+            this.SharedScript = this.CreateScript();
         }
 
         /// <summary>
@@ -125,127 +147,45 @@ namespace Avalon.Lua
         }
 
         /// <summary>
-        /// Increments the specified counter and performs locking for thread safety.
+        /// Sends a cancel command to the game if one is defined in the settings.  Some muds have a short
+        /// circuit command that will cancel all other commands that have been inputted on the server side.
         /// </summary>
-        /// <param name="c">The counter type.</param>
-        /// <param name="value">The value to increment the counter by, if left unspecified the default is 1.</param>
-        private void IncrementCounter(LuaCounter c, int value = 1)
+        public async Task SendCancelCommandAsync()
         {
-            switch (c)
+            // Cancel pending sends with the mud in case something went haywire, fire and forget.
+            if (!string.IsNullOrWhiteSpace(App.Settings.ProfileSettings.GameServerCancelCommand))
             {
-                case LuaCounter.ActiveScripts:
-                    lock (_lockObject)
-                    {
-                        this.ActiveLuaScripts += value;
-                        App.MainWindow.ViewModel.LuaScriptsActive = this.ActiveLuaScripts;
-                    }
-
-                    break;
-                case LuaCounter.ScriptsRun:
-                    lock (_lockObject)
-                    {
-                        this.LuaScriptsRun += value;
-                    }
-
-                    break;
-                case LuaCounter.ErrorCount:
-                    lock (_lockObject)
-                    {
-                        this.LuaErrorCount += value;
-                    }
-
-                    break;
-                case LuaCounter.SqlCount:
-                    lock (_lockObject)
-                    {
-                        this.LuaSqlCommandsRun += value;
-                    }
-
-                    break;
+                await _interpreter.Send(App.Settings.ProfileSettings.GameServerCancelCommand, true, false);
             }
         }
 
         /// <summary>
-        /// Decrements the specified counter and performs locking for thread safety.
+        /// Creates a <see cref="Script"/> with the Lua global variables and custom commands
+        /// setup for use.
         /// </summary>
-        /// <param name="c">The counter type.</param>
-        /// <param name="value">The value to decrement the counter by, if left unspecified the default is 1.</param>
-        private void DecrementCounter(LuaCounter c, int value = 1)
+        public Script CreateScript()
         {
-            switch (c)
+            // Setup Lua
+            var lua = new Script
             {
-                case LuaCounter.ActiveScripts:
-                    lock (_lockObject)
-                    {
-                        this.ActiveLuaScripts -= value;
-                        App.MainWindow.ViewModel.LuaScriptsActive = this.ActiveLuaScripts;
-                    }
+                Options = { CheckThreadAccess = false }
+            };
 
-                    break;
-                case LuaCounter.ScriptsRun:
-                    lock (_lockObject)
-                    {
-                        this.LuaScriptsRun -= value;
-                    }
+            // Pass the lua script object our object that holds our CLR commands.  This is a DynValue that
+            // has been pre-populated with our LuaCommands instance.
+            lua.Globals.Set("lua", _luaCmds);
 
-                    break;
-                case LuaCounter.ErrorCount:
-                    lock (_lockObject)
-                    {
-                        this.LuaErrorCount -= value;
-                    }
-
-                    break;
-                case LuaCounter.SqlCount:
-                    lock (_lockObject)
-                    {
-                        this.LuaSqlCommandsRun -= value;
-                    }
-
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Will handle writing the exception to the console.
-        /// </summary>
-        /// <param name="msg"></param>
-        /// <param name="ex"></param>
-        private void LogException(string msg = null, Exception ex = null)
-        {
-            if (!string.IsNullOrWhiteSpace(msg))
+            // Dynamic types from plugins.  These are created when they are registered and only need to be
+            // added into globals here for use.
+            foreach (var item in _clrTypes)
             {
-                _interpreter.Conveyor.EchoLog($"Lua Error: {msg}", LogType.Error);
+                lua.Globals.Set(item.Key, item.Value);
             }
 
-            if (ex == null)
-            {
-                return;
-            }
+            // Set the global variables that are specifically only available in Lua.
+            lua.Globals["global"] = this.LuaGlobalVariables;
 
-            // The inner exception will have Lua error with the line number, etc.  Show exception message if the
-            // inner exception doesn't exist.
-            if (ex.InnerException == null)
-            {
-                _interpreter.Conveyor.EchoLog($"Lua Exception: {ex.Message}", LogType.Error);
-            }
-
-            if (ex.InnerException != null)
-            {
-                if (ex.InnerException is InterpreterException innerEx)
-                {
-                    _interpreter.Conveyor.EchoLog($"Lua Inner Exception: {innerEx?.DecoratedMessage}", LogType.Error);
-                }
-                else
-                {
-                    _interpreter.Conveyor.EchoLog($"Lua Inner Exception: {ex.InnerException.Message}", LogType.Error);
-                }
-
-                if (ex.InnerException.Message.Contains("abort"))
-                {
-                    _interpreter.Conveyor.EchoLog("All active Lua scripts have been terminated.", LogType.Error);
-                }
-            }
+            return lua;
         }
 
         /// <summary>
@@ -266,25 +206,8 @@ namespace Avalon.Lua
                     IncrementCounter(LuaCounter.ActiveScripts);
                     IncrementCounter(LuaCounter.ScriptsRun);
 
-                    // Setup Lua
-                    var lua = new Script
-                    {
-                        Options = { CheckThreadAccess = false }
-                    };
-
-                    // Pass the lua script object our object that holds our CLR commands.  This is a DynValue that
-                    // has been pre-populated with our LuaCommands instance.
-                    lua.Globals.Set("lua", _luaCmds);
-
-                    // Dynamic types from plugins.  These are created when they are registered and only need to be
-                    // added into globals here for use.
-                    foreach (var item in _clrTypes)
-                    {
-                        lua.Globals.Set(item.Key, item.Value);
-                    }
-
-                    // Set the global variables that are specifically only available in Lua.
-                    lua.Globals["global"] = this.LuaGlobalVariables;
+                    // Get the script for this environment
+                    var lua = this.CreateScript();
 
                     // If there is a Lua global shared set of code run it, try catch it in case there
                     // is a problem with it, we don't want it to interfere with everything if there is
@@ -312,10 +235,7 @@ namespace Avalon.Lua
                     LogException(ex: ex);
 
                     // Cancel pending sends with the mud in case something went haywire
-                    if (!string.IsNullOrWhiteSpace(App.Settings.ProfileSettings.GameServerCancelCommand))
-                    {
-                        await _interpreter.Send(App.Settings.ProfileSettings.GameServerCancelCommand, true, false);
-                    }
+                    await SendCancelCommandAsync();
                 }
                 finally
                 {
@@ -328,39 +248,22 @@ namespace Avalon.Lua
         /// Executes a Lua script synchronously.
         /// </summary>
         /// <param name="luaCode"></param>
-        public void Execute(string luaCode)
+        public DynValue Execute(string luaCode)
         {
             if (string.IsNullOrWhiteSpace(luaCode))
             {
-                return;
+                return DynValue.Nil;
             }
 
-            Application.Current.Dispatcher.Invoke(() =>
+            var val = Application.Current.Dispatcher.Invoke(() =>
             {
                 try
                 {
                     IncrementCounter(LuaCounter.ActiveScripts);
                     IncrementCounter(LuaCounter.ScriptsRun);
 
-                    // Setup Lua
-                    var lua = new Script
-                    {
-                        Options = { CheckThreadAccess = false }
-                    };
-
-                    // Pass the lua script object our object that holds our CLR commands.  This is a DynValue that
-                    // has been pre-populated with our LuaCommands instance.
-                    lua.Globals.Set("lua", _luaCmds);
-
-                    // Dynamic types from plugins.  These are created when they are registered and only need to be
-                    // added into globals here for use.
-                    foreach (var item in _clrTypes)
-                    {
-                        lua.Globals.Set(item.Key, item.Value);
-                    }
-
-                    // Set the global variables that are specifically only available in Lua.
-                    lua.Globals["global"] = this.LuaGlobalVariables;
+                    // Get the script for this environment
+                    var lua = this.CreateScript();
 
                     try
                     {
@@ -375,7 +278,7 @@ namespace Avalon.Lua
                         LogException("There was an error in the global Lua file.", ex);
                     }
 
-                    lua.DoString(luaCode);
+                    return lua.DoString(luaCode);
                 }
                 catch (Exception ex)
                 {
@@ -383,16 +286,83 @@ namespace Avalon.Lua
                     LogException(ex: ex);
 
                     // Cancel pending sends with the mud in case something went haywire
-                    if (!string.IsNullOrWhiteSpace(App.Settings.ProfileSettings.GameServerCancelCommand))
-                    {
-                        _interpreter.Send(App.Settings.ProfileSettings.GameServerCancelCommand, true, false);
-                    }
+                    SendCancelCommandAsync();
                 }
                 finally
                 {
                     DecrementCounter(LuaCounter.ActiveScripts);
                 }
+
+                return DynValue.Nil;
             }, DispatcherPriority.Normal);
+
+            return val;
+        }
+
+        /// <summary>
+        /// Executes a shared Lua script synchronously.  This script re-use should be more memory efficient
+        /// and use less CPU cycles than loading the a new Script each time (although that method provides a
+        /// clean environment each time).
+        /// </summary>
+        /// <param name="functionName"></param>
+        /// <param name="args"></param>
+        /// <remarks>
+        /// MoonSharp is capable of accepting an object[] and converting those values to the
+        /// correct types.  Should that be required add the functionality in.  Since this is only called
+        /// from RegEx data now and that's always a string type returned we're avoiding the conversion code
+        /// all together.
+        /// </remarks>
+        public DynValue ExecuteShared(string functionName, params string[] args)
+        {
+            var val = Application.Current.Dispatcher.Invoke(() =>
+            {
+                try
+                {
+                    IncrementCounter(LuaCounter.ScriptsRun);
+                    DynValue fnc = this.SharedScript.Globals.Get(functionName);
+
+                    // If the function doesn't exist report the error and get out.  The caller should have
+                    // loaded the function already.
+                    if (fnc.IsNil())
+                    {
+                        IncrementCounter(LuaCounter.ErrorCount);
+                        LogException($"Lua error: Function '{functionName}' was not found.");
+                        return DynValue.Nil;
+                    }
+
+                    IncrementCounter(LuaCounter.ActiveScripts);
+                    IncrementCounter(LuaCounter.ScriptsRunFromCache);
+
+                    return App.MainWindow.Interp.LuaCaller.SharedScript.Call(fnc, args);
+                }
+                catch (Exception ex)
+                {
+                    IncrementCounter(LuaCounter.ErrorCount);
+                    LogException(ex: ex);
+
+                    // Cancel pending sends with the mud in case something went haywire
+                    SendCancelCommandAsync();
+                }
+                finally
+                {
+                    DecrementCounter(LuaCounter.ActiveScripts);
+                }
+
+                return DynValue.Nil;
+            }, DispatcherPriority.Normal);
+
+            return val;
+        }
+
+        /// <summary>
+        /// Loads a Lua function that can be reused if it is an exact match that has a varargs
+        /// signature, e.g. "function do_something(...)".  Every time this is called a new instance
+        /// of the script will be loaded.
+        /// </summary>
+        /// <param name="luaCode"></param>
+        public void LoadSharedScript(string luaCode, string id = null)
+        {
+            _ = this.SharedScript.DoString(luaCode, codeFriendlyName: id);
         }
 
         /// <summary>
@@ -450,6 +420,144 @@ namespace Avalon.Lua
                     Success = false,
                     Exception = ex
                 };
+            }
+        }
+
+        /// <summary>
+        /// Increments the specified counter and performs locking for thread safety.
+        /// </summary>
+        /// <param name="c">The counter type.</param>
+        /// <param name="value">The value to increment the counter by, if left unspecified the default is 1.</param>
+        private void IncrementCounter(LuaCounter c, int value = 1)
+        {
+            switch (c)
+            {
+                case LuaCounter.ActiveScripts:
+                    lock (_lockObject)
+                    {
+                        this.ActiveLuaScripts += value;
+                        App.MainWindow.ViewModel.LuaScriptsActive = this.ActiveLuaScripts;
+                    }
+
+                    break;
+                case LuaCounter.ScriptsRun:
+                    lock (_lockObject)
+                    {
+                        this.LuaScriptsRun += value;
+                    }
+
+                    break;
+                case LuaCounter.ErrorCount:
+                    lock (_lockObject)
+                    {
+                        this.LuaErrorCount += value;
+                    }
+
+                    break;
+                case LuaCounter.SqlCount:
+                    lock (_lockObject)
+                    {
+                        this.LuaSqlCommandsRun += value;
+                    }
+
+                    break;
+                case LuaCounter.ScriptsRunFromCache:
+                    lock (_lockObject)
+                    {
+                        this.LuaScriptsRunFromCache += value;
+                    }
+
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Decrements the specified counter and performs locking for thread safety.
+        /// </summary>
+        /// <param name="c">The counter type.</param>
+        /// <param name="value">The value to decrement the counter by, if left unspecified the default is 1.</param>
+        private void DecrementCounter(LuaCounter c, int value = 1)
+        {
+            switch (c)
+            {
+                case LuaCounter.ActiveScripts:
+                    lock (_lockObject)
+                    {
+                        this.ActiveLuaScripts -= value;
+                        App.MainWindow.ViewModel.LuaScriptsActive = this.ActiveLuaScripts;
+                    }
+
+                    break;
+                case LuaCounter.ScriptsRun:
+                    lock (_lockObject)
+                    {
+                        this.LuaScriptsRun -= value;
+                    }
+
+                    break;
+                case LuaCounter.ErrorCount:
+                    lock (_lockObject)
+                    {
+                        this.LuaErrorCount -= value;
+                    }
+
+                    break;
+                case LuaCounter.SqlCount:
+                    lock (_lockObject)
+                    {
+                        this.LuaSqlCommandsRun -= value;
+                    }
+
+                    break;
+                case LuaCounter.ScriptsRunFromCache:
+                    lock (_lockObject)
+                    {
+                        this.LuaScriptsRunFromCache -= value;
+                    }
+
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Will handle writing the exception to the console.
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <param name="ex"></param>
+        private void LogException(string msg = null, Exception ex = null)
+        {
+            if (!string.IsNullOrWhiteSpace(msg))
+            {
+                _interpreter.Conveyor.EchoLog($"Lua Error: {msg}", LogType.Error);
+            }
+
+            if (ex == null)
+            {
+                return;
+            }
+
+            // The inner exception will have Lua error with the line number, etc.  Show exception message if the
+            // inner exception doesn't exist.
+            if (ex.InnerException == null)
+            {
+                _interpreter.Conveyor.EchoLog($"Lua Exception: {ex.Message}", LogType.Error);
+            }
+
+            if (ex.InnerException != null)
+            {
+                if (ex.InnerException is InterpreterException innerEx)
+                {
+                    _interpreter.Conveyor.EchoLog($"Lua Inner Exception: {innerEx?.DecoratedMessage}", LogType.Error);
+                }
+                else
+                {
+                    _interpreter.Conveyor.EchoLog($"Lua Inner Exception: {ex.InnerException.Message}", LogType.Error);
+                }
+
+                if (ex.InnerException.Message.Contains("abort"))
+                {
+                    _interpreter.Conveyor.EchoLog("All active Lua scripts have been terminated.", LogType.Error);
+                }
             }
         }
     }

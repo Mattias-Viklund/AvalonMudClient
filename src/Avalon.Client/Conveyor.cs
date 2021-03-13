@@ -1,16 +1,25 @@
-﻿using Avalon.Common.Interfaces;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Avalon.Colors;
+using Avalon.Common.Colors;
+using Avalon.Common.Interfaces;
+using Avalon.Common.Models;
 using Avalon.Common.Settings;
+using Avalon.Extensions;
+using MahApps.Metro.IconPacks;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows;
-using Avalon.Common.Colors;
-using Avalon.Extensions;
-using Avalon.Common.Models;
 using System.Threading.Tasks;
-using Avalon.Colors;
-using System.Collections.Generic;
-using MahApps.Metro.IconPacks;
+using System.Windows;
 
 namespace Avalon
 {
@@ -29,16 +38,25 @@ namespace Avalon
         /// <param name="key"></param>
         public string GetVariable(string key)
         {
-            var variable = App.Settings.ProfileSettings.Variables.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+            Variable variable = null;
+
+            for (int i = 0; i < App.Settings.ProfileSettings.Variables.Count; i++)
+            {
+                var x = App.Settings.ProfileSettings.Variables[i];
+
+                if (string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    variable = x;
+                    break;
+                }
+            }
 
             if (variable != null)
             {
                 return variable.Value;
             }
-            else
-            {
-                return "";
-            }
+
+            return "";
         }
 
         /// <summary>
@@ -61,24 +79,45 @@ namespace Avalon
         /// <param name="color">The known color</param>
         public void SetVariable(string key, string value, string color)
         {
-            var variable = App.Settings.ProfileSettings.Variables.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+            Variable variable = null;
+
+            for (int i = 0; i < App.Settings.ProfileSettings.Variables.Count; i++)
+            {
+                var x = App.Settings.ProfileSettings.Variables[i];
+
+                if (string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    variable = x;
+                    break;
+                }
+            }
 
             if (variable != null)
             {
                 // Only change the string if the value has changed.
                 if (!string.Equals(variable.Value, value, StringComparison.Ordinal))
                 {
-                    // Only fire the OnChanged event if the variable was changed, we will fire and
-                    // forget this Lua script.  This is going to run.  %1 will be the old value and
-                    // %2 will be the new value.  In order to have both the old and new value we are
-                    // running before the actual update so the variable will won't have changed yet
-                    // but will be provided to the script.  We're also (for now) firing and forgetting
-                    // the Lua call so we can't be sure the value will consistently be set which is why
-                    // we'll do the string replacement here.
+                    // Only fire the OnChanged event if the variable was changed and a script
+                    // exists for it.  We will pass in the values as args to the function with
+                    // arg 0 being the key, arg 1 being the old value and arg 2 being the new value.
                     if (!string.IsNullOrWhiteSpace(variable.OnChangeEvent))
                     {
-                        // TODO - Endless loop protection if they set the value of this variable in the Lua script.
-                        this.ExecuteLuaAsync(variable.OnChangeEvent.Replace("%1", variable.Value).Replace("%2", value));
+                        // See if the script has been updated since it's last run, if it has, re-load it and
+                        // then toggle the flag saying it's not updated.
+                        if (variable.LuaScriptOnChange.Updated)
+                        {
+                            App.MainWindow.Interp.LuaCaller.LoadSharedScript(variable.LuaScriptOnChange.Code, $"var_{variable.Key}");
+                            variable.LuaScriptOnChange.Updated = false;
+                        }
+
+                        // The key, the old value (1) and the new value (2).
+                        var paramList = new string[3];
+                        paramList[0] = key;
+                        paramList[1] = variable.Value;
+                        paramList[2] = value;
+
+                        // TODO - Endless loop protection if they set the value of THIS variable in the Lua script.
+                        this.ExecuteLuaShared(variable.LuaScriptOnChange.FunctionName, paramList);
                     }
 
                     variable.Value = value;
@@ -105,7 +144,18 @@ namespace Avalon
         /// <param name="key"></param>
         public void ShowVariable(string key)
         {
-            var variable = App.Settings.ProfileSettings.Variables.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+            Variable variable = null;
+
+            for (int i = 0; i < App.Settings.ProfileSettings.Variables.Count; i++)
+            {
+                var x = App.Settings.ProfileSettings.Variables[i];
+
+                if (string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    variable = x;
+                    break;
+                }
+            }
 
             if (variable != null)
             {
@@ -122,7 +172,18 @@ namespace Avalon
         /// <param name="key"></param>
         public void HideVariable(string key)
         {
-            var variable = App.Settings.ProfileSettings.Variables.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+            Variable variable = null;
+
+            for (int i = 0; i < App.Settings.ProfileSettings.Variables.Count; i++)
+            {
+                var x = App.Settings.ProfileSettings.Variables[i];
+
+                if (string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    variable = x;
+                    break;
+                }
+            }
 
             if (variable != null)
             {
@@ -729,7 +790,7 @@ namespace Avalon
             // If the trigger is null, go through the system triggers.
             if (trigger == null)
             {
-                trigger = App.SystemTriggers.Find(x => x.Identifier.Equals(id, StringComparison.Ordinal));
+                trigger = App.InstanceGlobals.SystemTriggers.Find(x => x.Identifier.Equals(id, StringComparison.Ordinal));
             }
 
             return trigger;
@@ -1213,6 +1274,27 @@ namespace Avalon
             {
                 // This is all that's going to execute as it clears the list.. we can "fire and forget".
                 await App.MainWindow.Interp.LuaCaller.ExecuteAsync(lua);
+            }));
+        }
+
+        /// <summary>
+        /// Executes a cached Lua script on the UI thread.
+        /// </summary>
+        /// <param name="functionName"></param>
+        /// <param name="args"></param>
+        public async Task ExecuteLuaShared(string functionName, string[] args)
+        {
+            // If it has access directly send it and return, otherwise we'll use the dispatcher to queue it up on the UI thread.
+            if (Application.Current.Dispatcher.CheckAccess())
+            {
+                _ = App.MainWindow.Interp.LuaCaller.ExecuteShared(functionName, args);
+                return;
+            }
+
+            await Application.Current.Dispatcher.InvokeAsync(new Action(async () =>
+            {
+                // This is all that's going to execute as it clears the list.. we can "fire and forget".
+                _ = App.MainWindow.Interp.LuaCaller.ExecuteShared(functionName, args);
             }));
         }
 

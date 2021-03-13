@@ -1,4 +1,13 @@
-﻿namespace Avalon.Lua
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+namespace Avalon.Lua
 {
     /// <summary>
     /// Represents a statistical counter that the LuaCaller will track.
@@ -20,6 +29,10 @@
         /// <summary>
         /// The number of SQL statements that have been run in the instance of the LuaCaller.
         /// </summary>
-        SqlCount
+        SqlCount,
+        /// <summary>
+        /// The number of Lua scripts run from the Lua cache.
+        /// </summary>
+        ScriptsRunFromCache
     }
 }

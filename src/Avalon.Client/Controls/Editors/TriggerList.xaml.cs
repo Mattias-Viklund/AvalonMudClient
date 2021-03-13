@@ -1,4 +1,13 @@
-﻿using System;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -64,7 +73,7 @@ namespace Avalon.Controls
 
             if (win != null)
             {
-                win.StatusBarRightText = $"{App.Settings.ProfileSettings.TriggerList.Count} Triggers";
+                win.StatusBarRightText = $"{App.Settings.ProfileSettings.TriggerList.Count.ToString()} Triggers";
             }
         }
 

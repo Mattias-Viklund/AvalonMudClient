@@ -1,4 +1,13 @@
-﻿using Argus.Extensions;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Argus.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,6 +17,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using Avalon.Lua;
 
 namespace Avalon.Utilities
 {
@@ -71,16 +81,6 @@ namespace Avalon.Utilities
             sb.Replace("\x1B[1D", ""); // Left
             sb.Replace("\x1B[5m", ""); // Blink
             sb.Replace("\x1b[2J", ""); // Clear Screen
-            
-            // TODO Background color support
-            //sb.Replace("\x1b[40m", ""); // Black Background
-            //sb.Replace("\x1b[41m", ""); // Red Background
-            //sb.Replace("\x1b[42m", ""); // Green Background
-            //sb.Replace("\x1b[43m", ""); // Yellow Background
-            //sb.Replace("\x1b[44m", ""); // Blue Background
-            //sb.Replace("\x1b[45m", ""); // Purple Background
-            //sb.Replace("\x1b[46m", ""); // Cyan Background
-            //sb.Replace("\x1b[47m", ""); // White Background
         }
 
         /// <summary>

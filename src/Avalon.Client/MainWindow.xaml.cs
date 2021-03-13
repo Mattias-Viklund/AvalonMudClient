@@ -1,4 +1,13 @@
-﻿using Argus.Extensions;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Argus.Extensions;
 using Avalon.Common.Models;
 using Avalon.Common.Settings;
 using Avalon.Controls;
@@ -94,11 +103,11 @@ namespace Avalon
 
                 if (count == 1)
                 {
-                    App.Conveyor.EchoSuccess($"{count} plugin was updated.");
+                    App.Conveyor.EchoSuccess($"{count.ToString()} plugin was updated.");
                 }
                 else if (count > 1)
                 {
-                    App.Conveyor.EchoSuccess($"{count} plugins were updated.");
+                    App.Conveyor.EchoSuccess($"{count.ToString()} plugins were updated.");
                 }
             }
             catch (Exception ex)
@@ -113,7 +122,7 @@ namespace Avalon
 
                 if (count > 0)
                 {
-                    App.Conveyor.EchoInfo($"{count} files(s) deleted from the updates folder.");
+                    App.Conveyor.EchoInfo($"{count.ToString()} files(s) deleted from the updates folder.");
                 }
             }
             catch (Exception ex)
@@ -408,6 +417,7 @@ namespace Avalon
             // AppSettings gets replaced after this control is loaded.
             Utilities.Utilities.SetBinding(App.Settings.ProfileSettings, "AliasesEnabled", ButtonAliasesEnabled, CheckBox.IsCheckedProperty);
             Utilities.Utilities.SetBinding(App.Settings.ProfileSettings, "TriggersEnabled", ButtonTriggersEnabled, CheckBox.IsCheckedProperty);
+            Utilities.Utilities.SetBinding(App.Settings.ProfileSettings, "ReplacementTriggersEnabled", ButtonReplacementTriggersEnabled, CheckBox.IsCheckedProperty);
 
             // Custom Tab 1 + Quick Toggle Bar
             Utilities.Utilities.SetBinding(App.Settings.AvalonSettings, "CustomTab1Visible", CustomTab1, TabItemEx.VisibilityProperty, boolToCollapsedConverter);
@@ -498,7 +508,7 @@ namespace Avalon
         /// <param name="e"></param>
         private async void ButtonExitWithoutSave_OnClickAsync(object sender, RoutedEventArgs e)
         {
-            App.SkipSaveOnExit = true;
+            App.InstanceGlobals.SkipSaveOnExit = true;
             App.Conveyor.EchoLog("Exiting WITHOUT saving the current profile.", LogType.Warning);
             await Task.Delay(1000);
             Application.Current.Shutdown(0);
@@ -1329,6 +1339,7 @@ namespace Avalon
         private void SqlStatus_OnClick(object sender, RoutedEventArgs e)
         {
             this.Interp.Send("#sql-debug", true, false);
+            TextInput.Editor.Focus();
         }
 
         /// <summary>
@@ -1339,6 +1350,7 @@ namespace Avalon
         private void LuaStatus_OnClick(object sender, RoutedEventArgs e)
         {
             this.Interp.Send("#lua-debug", true, false);
+            TextInput.Editor.Focus();
         }
 
         /// <summary>
@@ -1349,6 +1361,7 @@ namespace Avalon
         private void ScheduledTaskStatus_OnClick(object sender, RoutedEventArgs e)
         {
             this.Interp.Send("#task-list", true, false);
+            TextInput.Editor.Focus();
         }
 
         /// <summary>

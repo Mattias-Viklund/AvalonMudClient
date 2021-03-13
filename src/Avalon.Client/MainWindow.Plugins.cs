@@ -1,4 +1,13 @@
-﻿using Avalon.Common.Interfaces;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Avalon.Common.Interfaces;
 using Avalon.Common.Models;
 using Avalon.Common.Plugins;
 using System;
@@ -83,13 +92,13 @@ namespace Avalon
         private void ActivatePlugins(string ipAddress)
         {
             // If there are any system triggers, clear the references to the Conveyor.
-            foreach (var trigger in App.SystemTriggers)
+            foreach (var trigger in App.InstanceGlobals.SystemTriggers)
             {
                 trigger.Conveyor = null;
             }
 
             // Clear the system triggers list.
-            App.SystemTriggers.Clear();
+            App.InstanceGlobals.SystemTriggers.Clear();
 
             // Go through all of the found plugins and add in and initialize any triggers so they can be used now.
             foreach (var plugin in App.Plugins)
@@ -113,7 +122,7 @@ namespace Avalon
                         if (trigger.SystemTrigger)
                         {
                             // System triggers get loaded every time
-                            App.SystemTriggers.Add(trigger);
+                            App.InstanceGlobals.SystemTriggers.Add(trigger);
                         }
                         else
                         {

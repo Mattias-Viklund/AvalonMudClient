@@ -1,4 +1,13 @@
-﻿using Argus.Extensions;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Argus.Extensions;
 using Avalon.Common.Colors;
 using Avalon.Common.Interfaces;
 using Avalon.Common.Models;
@@ -11,6 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalon.Colors;
 using System.Text;
+using Cysharp.Text;
 
 namespace Avalon
 {
@@ -111,7 +121,20 @@ namespace Avalon
                     else
                     {
                         string firstWord = item.FirstWord();
-                        var hashCmd = HashCommands.Find(x => x.Name.Equals(firstWord, StringComparison.Ordinal));
+
+                        // Avoided a closure allocation by loop instead of using Linq.
+                        IHashCommand? hashCmd = null;
+
+                        for (int index = 0; index < this.HashCommands.Count; index++)
+                        {
+                            var x = this.HashCommands[index];
+
+                            if (x.Name.Equals(firstWord, StringComparison.Ordinal))
+                            {
+                                hashCmd = x;
+                                break;
+                            }
+                        }
 
                         if (hashCmd == null)
                         {
@@ -127,6 +150,7 @@ namespace Avalon
                             }
                             else
                             {
+                                // ReSharper disable once MethodHasAsyncOverload
                                 hashCmd.Execute();
                             }
                         }
@@ -136,7 +160,7 @@ namespace Avalon
                 catch (Exception ex)
                 {
                     App.Conveyor.EchoError(ex.Message);
-                    
+
                     if (this.Telnet == null || !this.Telnet.IsConnected())
                     {
                         App.Conveyor.SetText("Disconnected from server.", TextTarget.StatusBarText);
@@ -162,11 +186,11 @@ namespace Avalon
                 Conveyor.EchoLog($"Connecting: {App.Settings.ProfileSettings.IpAddress}:{App.Settings.ProfileSettings.Port}", LogType.Information);
 
                 var ctc = new CancellationTokenSource();
-                Telnet = new TelnetClient(App.Settings.ProfileSettings.IpAddress, App.Settings.ProfileSettings.Port, TimeSpan.FromSeconds(0), ctc.Token);
-                Telnet.ConnectionClosed += connectionClosed;
-                Telnet.LineReceived += lineReceived;
-                Telnet.DataReceived += dataReceived;
-                await Telnet.ConnectAsync();
+                this.Telnet = new TelnetClient(App.Settings.ProfileSettings.IpAddress, App.Settings.ProfileSettings.Port, TimeSpan.FromSeconds(0), ctc.Token);
+                this.Telnet.ConnectionClosed += connectionClosed;
+                this.Telnet.LineReceived += lineReceived;
+                this.Telnet.DataReceived += dataReceived;
+                await this.Telnet.ConnectAsync();
             }
             catch (Exception ex)
             {
@@ -181,8 +205,8 @@ namespace Avalon
         /// </summary>
         public void Disconnect()
         {
-            Telnet?.Dispose();
-            Telnet = null;
+            this.Telnet?.Dispose();
+            this.Telnet = null;
         }
 
         /// <summary>
@@ -195,7 +219,7 @@ namespace Avalon
 
             if (_aliasRecursionDepth >= 10)
             {
-                Conveyor.EchoLog($"Alias error: Reached max recursion depth of {_aliasRecursionDepth}.\r\n", LogType.Error);
+                Conveyor.EchoLog($"Alias error: Reached max recursion depth of {_aliasRecursionDepth.ToString()}.\r\n", LogType.Error);
                 return new List<string>();
             }
 
@@ -208,11 +232,23 @@ namespace Avalon
 
             // Split the list
             var list = new List<string>();
-            
+
             foreach (var item in cmd.Split(';'))
             {
                 var first = item.FirstArgument();
-                var alias = App.Settings.ProfileSettings.AliasList.FirstOrDefault(x => x.AliasExpression == first.Item1 && x.Enabled && (string.IsNullOrEmpty(x.Character) || x.Character == characterName));
+
+                Alias? alias = null;
+
+                for (int index = 0; index < App.Settings.ProfileSettings.AliasList.Count; index++)
+                {
+                    var x = App.Settings.ProfileSettings.AliasList[index];
+
+                    if (x.AliasExpression == first.Item1 && x.Enabled && (string.IsNullOrEmpty(x.Character) || x.Character == characterName))
+                    {
+                        alias = x;
+                        break;
+                    }
+                }
 
                 if (alias == null)
                 {
@@ -238,28 +274,23 @@ namespace Avalon
                     {
                         list.Clear();
 
-                        // Alias where the arguments are specified, we will support up to 9 arguments at this time.  Only do
-                        // the replacements if the string contains a percent sign.
-                        if (alias.Command.Contains("%", StringComparison.Ordinal))
+                        if (alias.LuaScript.Updated)
                         {
-                            var sb = new StringBuilder(alias.Command);
-
-                            // %0 will represent the entire matched string.
-                            sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
-
-                            // %1-%9
-                            for (int i = 1; i <= 9; i++)
-                            {
-                                sb.Replace($"%{i}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
-                            }
-
-                            // This is all that's going to execute as it clears the list.. we can "fire and forget".
-                            this.LuaCaller.ExecuteAsync(sb.ToString());
+                            this.LuaCaller.LoadSharedScript(alias.LuaScript.Code, alias.AliasExpression);
+                            alias.LuaScript.Updated = false;
                         }
-                        else
+
+                        // Create our param list to pass to the cached Lua function.
+                        var paramList = new string[10];
+                        paramList[0] = first.Item2;
+
+                        // We'll support up to nine params for now.  TODO: Only get what's there.
+                        for (int i = 1; i <= 9; i++)
                         {
-                            this.LuaCaller.ExecuteAsync(alias.Command);
+                            paramList[i] = first.Item2.ParseWord(i, ' ');
                         }
+
+                        this.LuaCaller.ExecuteShared(alias.LuaScript.FunctionName, paramList);
 
                         return list;
                     }
@@ -276,7 +307,8 @@ namespace Avalon
                         // Alias where the arguments are specified, we will support up to 9 arguments at this time.
                         if (alias.Command.Contains("%", StringComparison.Ordinal))
                         {
-                            var sb = new StringBuilder(alias.Command);
+                            var sb = ZString.CreateStringBuilder();
+                            sb.Append(alias.Command);
 
                             // %0 will represent the entire matched string.
                             sb.Replace("%0", first.Item2);
@@ -284,10 +316,12 @@ namespace Avalon
                             // %1-%9
                             for (int i = 1; i <= 9; i++)
                             {
-                                sb.Replace($"%{i}", first.Item2.ParseWord(i, " "));
+                                sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " "));
                             }
 
                             list.AddRange(ParseCommand(sb.ToString()));
+                            sb.Dispose();
+
                             _aliasRecursionDepth--;
                         }
                         else
@@ -438,7 +472,7 @@ namespace Avalon
             var e = new EchoEventArgs
             {
                 Text = $"{sb}\r\n",
-                UseDefaultColors = true,                
+                UseDefaultColors = true,
                 ForegroundColor = AnsiColors.Default,
                 Terminal = TerminalTarget.Main
             };

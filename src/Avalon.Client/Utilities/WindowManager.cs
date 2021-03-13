@@ -1,4 +1,13 @@
-﻿using Avalon.Common.Models;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Avalon.Common.Models;
 using Avalon.Controls;
 using Avalon.Sqlite;
 using Avalon.Windows;
@@ -159,6 +168,19 @@ namespace Avalon.Utilities
                 {
                     App.Conveyor.EchoLog(ex.Message, LogType.Error);
                 }
+            }
+            else if (windowName == "ReplacementTriggers")
+            {
+                var win = new Shell(new ReplacementTriggerList(App.Settings.ProfileSettings.ReplacementTriggerList), null)
+                {
+                    Name = "ReplacementTriggers",
+                    HeaderTitle = "Replacement Triggers",
+                    HeaderIcon = Symbol.Directions,
+                    SecondaryButtonVisibility = Visibility.Collapsed
+                };
+
+                win.SetSizeAndPosition(.85);
+                win.Show();
             }
             else if (windowName == "UpdateDLLPlugin")
             {

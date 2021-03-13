@@ -1,9 +1,19 @@
-﻿using Argus.Extensions;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Argus.Extensions;
 using Avalon.Colors;
 using Avalon.Common.Colors;
 using Avalon.Common.Models;
 using System;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,6 +28,15 @@ namespace Avalon.Extensions
     /// </summary>
     public static class ExtensionMethods
     {
+        /// <summary>
+        /// Returns a true or false with a null value returned as a false.
+        /// </summary>
+        /// <param name="match"></param>
+        public static bool TrySuccess(this Match match)
+        {
+            return (match?.Success ?? false);
+        }
+
         /// <summary>
         /// Removes all line endings from a string using a char array for performance vs.
         /// a string replace.

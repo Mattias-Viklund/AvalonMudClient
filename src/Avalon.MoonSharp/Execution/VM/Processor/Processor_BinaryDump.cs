@@ -8,128 +8,155 @@ using MoonSharp.Interpreter.IO;
 
 namespace MoonSharp.Interpreter.Execution.VM
 {
-	sealed partial class Processor
-	{
-		const ulong DUMP_CHUNK_MAGIC = 0x1A0D234E4F4F4D1D;
-		const int DUMP_CHUNK_VERSION = 0x150;
+    internal sealed partial class Processor
+    {
+        private const ulong DUMP_CHUNK_MAGIC = 0x1A0D234E4F4F4D1D;
+        private const int DUMP_CHUNK_VERSION = 0x150;
 
-		internal static bool IsDumpStream(Stream stream)
-		{
-			if (stream.Length >= 8)
-			{
-				using (BinaryReader br = new BinaryReader(stream, Encoding.UTF8))
-				{
-					ulong magic = br.ReadUInt64();
-					stream.Seek(-8, SeekOrigin.Current);
-					return magic == DUMP_CHUNK_MAGIC;
-				}
-			}
-			return false;
-		}
+        internal static bool IsDumpStream(Stream stream)
+        {
+            if (stream.Length >= 8)
+            {
+                using (var br = new BinaryReader(stream, Encoding.UTF8))
+                {
+                    ulong magic = br.ReadUInt64();
+                    stream.Seek(-8, SeekOrigin.Current);
+                    return magic == DUMP_CHUNK_MAGIC;
+                }
+            }
 
-		internal int Dump(Stream stream, int baseAddress, bool hasUpvalues)
-		{
-			using (BinaryWriter bw = new BinDumpBinaryWriter(stream, Encoding.UTF8))
-			{
-				Dictionary<SymbolRef, int> symbolMap = new Dictionary<SymbolRef, int>();
+            return false;
+        }
 
-				Instruction meta = FindMeta(ref baseAddress);
+        internal int Dump(Stream stream, int baseAddress, bool hasUpvalues)
+        {
+            using (BinaryWriter bw = new BinDumpBinaryWriter(stream, Encoding.UTF8))
+            {
+                var symbolMap = new Dictionary<SymbolRef, int>();
 
-				if (meta == null)
-					throw new ArgumentException("baseAddress");
+                var meta = this.FindMeta(ref baseAddress);
 
-				bw.Write(DUMP_CHUNK_MAGIC);
-				bw.Write(DUMP_CHUNK_VERSION);
-				bw.Write(hasUpvalues);
-				bw.Write(meta.NumVal);
+                if (meta == null)
+                {
+                    throw new ArgumentException("baseAddress");
+                }
 
-				for (int i = 0; i <= meta.NumVal; i++)
-				{
-					SymbolRef[] symbolList;
-					SymbolRef symbol;
+                bw.Write(DUMP_CHUNK_MAGIC);
+                bw.Write(DUMP_CHUNK_VERSION);
+                bw.Write(hasUpvalues);
+                bw.Write(meta.NumVal);
 
-					m_RootChunk.Code[baseAddress + i].GetSymbolReferences(out symbolList, out symbol);
+                for (int i = 0; i <= meta.NumVal; i++)
+                {
+                    SymbolRef[] symbolList;
+                    SymbolRef symbol;
 
-					if (symbol != null)
-						AddSymbolToMap(symbolMap, symbol);
+                    _rootChunk.Code[baseAddress + i].GetSymbolReferences(out symbolList, out symbol);
 
-					if (symbolList != null)
-						foreach (var s in symbolList)
-							AddSymbolToMap(symbolMap, s);
-				}
+                    if (symbol != null)
+                    {
+                        this.AddSymbolToMap(symbolMap, symbol);
+                    }
 
-				foreach (SymbolRef sr in symbolMap.Keys.ToArray())
-				{
-					if (sr.i_Env != null)
-						AddSymbolToMap(symbolMap, sr.i_Env);
-				}
+                    if (symbolList != null)
+                    {
+                        foreach (var s in symbolList)
+                        {
+                            this.AddSymbolToMap(symbolMap, s);
+                        }
+                    }
+                }
 
-				SymbolRef[] allSymbols = new SymbolRef[symbolMap.Count];
+                foreach (var sr in symbolMap.Keys.ToArray())
+                {
+                    if (sr._env != null)
+                    {
+                        this.AddSymbolToMap(symbolMap, sr._env);
+                    }
+                }
 
-				foreach (KeyValuePair<SymbolRef, int> pair in symbolMap)
-				{
-					allSymbols[pair.Value] = pair.Key;
-				}
+                var allSymbols = new SymbolRef[symbolMap.Count];
 
-				bw.Write(symbolMap.Count);
+                foreach (var pair in symbolMap)
+                {
+                    allSymbols[pair.Value] = pair.Key;
+                }
 
-				foreach (SymbolRef sym in allSymbols)
-					sym.WriteBinary(bw);
+                bw.Write(symbolMap.Count);
 
-				foreach (SymbolRef sym in allSymbols)
-					sym.WriteBinaryEnv(bw, symbolMap);
+                foreach (var sym in allSymbols)
+                {
+                    sym.WriteBinary(bw);
+                }
 
-				for (int i = 0; i <= meta.NumVal; i++)
-					m_RootChunk.Code[baseAddress + i].WriteBinary(bw, baseAddress, symbolMap);
+                foreach (var sym in allSymbols)
+                {
+                    sym.WriteBinaryEnv(bw, symbolMap);
+                }
 
-				return meta.NumVal + baseAddress + 1;
-			}
-		}
+                for (int i = 0; i <= meta.NumVal; i++)
+                {
+                    _rootChunk.Code[baseAddress + i].WriteBinary(bw, baseAddress, symbolMap);
+                }
 
-		private void AddSymbolToMap(Dictionary<SymbolRef, int> symbolMap, SymbolRef s)
-		{
-			if (!symbolMap.ContainsKey(s))
-				symbolMap.Add(s, symbolMap.Count);
-		}
+                return meta.NumVal + baseAddress + 1;
+            }
+        }
 
-		internal int Undump(Stream stream, int sourceID, Table envTable, out bool hasUpvalues)
-		{
-			int baseAddress = m_RootChunk.Code.Count;
-			SourceRef sourceRef = new SourceRef(sourceID, 0, 0, 0, 0, false);
+        private void AddSymbolToMap(Dictionary<SymbolRef, int> symbolMap, SymbolRef s)
+        {
+            if (!symbolMap.ContainsKey(s))
+            {
+                symbolMap.Add(s, symbolMap.Count);
+            }
+        }
 
-			using (BinaryReader br = new BinDumpBinaryReader(stream, Encoding.UTF8))
-			{
-				ulong headerMark = br.ReadUInt64();
+        internal int Undump(Stream stream, int sourceID, Table envTable, out bool hasUpvalues)
+        {
+            int baseAddress = _rootChunk.Code.Count;
+            var sourceRef = new SourceRef(sourceID, 0, 0, 0, 0, false);
 
-				if (headerMark != DUMP_CHUNK_MAGIC)
-					throw new ArgumentException("Not a MoonSharp chunk");
+            using (BinaryReader br = new BinDumpBinaryReader(stream, Encoding.UTF8))
+            {
+                ulong headerMark = br.ReadUInt64();
 
-				int version = br.ReadInt32();
+                if (headerMark != DUMP_CHUNK_MAGIC)
+                {
+                    throw new ArgumentException("Not a MoonSharp chunk");
+                }
 
-				if (version != DUMP_CHUNK_VERSION)
-					throw new ArgumentException("Invalid version");
+                int version = br.ReadInt32();
 
-				hasUpvalues = br.ReadBoolean();
+                if (version != DUMP_CHUNK_VERSION)
+                {
+                    throw new ArgumentException("Invalid version");
+                }
 
-				int len = br.ReadInt32();
+                hasUpvalues = br.ReadBoolean();
 
-				int numSymbs = br.ReadInt32();
-				SymbolRef[] allSymbs = new SymbolRef[numSymbs];
+                int len = br.ReadInt32();
 
-				for (int i = 0; i < numSymbs; i++)
-					allSymbs[i] = SymbolRef.ReadBinary(br);
+                int numSymbs = br.ReadInt32();
+                var allSymbs = new SymbolRef[numSymbs];
 
-				for (int i = 0; i < numSymbs; i++)
-					allSymbs[i].ReadBinaryEnv(br, allSymbs);
+                for (int i = 0; i < numSymbs; i++)
+                {
+                    allSymbs[i] = SymbolRef.ReadBinary(br);
+                }
 
-				for (int i = 0; i <= len; i++)
-				{
-					Instruction I = Instruction.ReadBinary(sourceRef, br, baseAddress, envTable, allSymbs);
-					m_RootChunk.Code.Add(I);
-				}
+                for (int i = 0; i < numSymbs; i++)
+                {
+                    allSymbs[i].ReadBinaryEnv(br, allSymbs);
+                }
 
-				return baseAddress;
-			}
-		}
-	}
+                for (int i = 0; i <= len; i++)
+                {
+                    var I = Instruction.ReadBinary(sourceRef, br, baseAddress, envTable, allSymbs);
+                    _rootChunk.Code.Add(I);
+                }
+
+                return baseAddress;
+            }
+        }
+    }
 }

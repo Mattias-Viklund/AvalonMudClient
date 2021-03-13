@@ -1,13 +1,22 @@
-﻿using System.Collections.Generic;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using System.Collections.Generic;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Interop;
 
 namespace Avalon.Lua
 {
     /// <summary>
-	/// Shared global variables for the Lua environment.
-	/// </summary>
-	public class LuaGlobalVariables : IUserDataType
+    /// Shared global variables for the Lua environment.
+    /// </summary>
+    public class LuaGlobalVariables : IUserDataType
     {
         /// <summary>
         /// Global variables dictionary.
@@ -77,7 +86,7 @@ namespace Avalon.Lua
         {
             if (index.Type != DataType.String)
             {
-                throw new ScriptRuntimeException("string property was expected");
+                throw new ScriptRuntimeException("String property was expected.");
             }
 
             lock (_lock)
@@ -95,7 +104,7 @@ namespace Avalon.Lua
         {
             if (index.Type != DataType.String)
             {
-                throw new ScriptRuntimeException("string property was expected");
+                throw new ScriptRuntimeException("String property was expected.");
             }
 
             lock (_lock)

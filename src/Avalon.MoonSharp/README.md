@@ -2,7 +2,7 @@
 
 Lua Support for the Avalon Mud Client.
 
-- This is a .NET Standard 2.0/.NET Core 3 port of the Moonsharp library (which can be used with UWP and .NET Core 3).
+- This is a .NET Standard 2.0/.NET Core 3/.NET 5 port of the Moonsharp library (which can be used with UWP and .NET Core 3).
 - This is an unofficial release with minimal changes to the source outside of compilation targets.  There is again traction on the main project, hopefully the need for this package will cease to exist in the future and it can be deprecated.
 - License is inherited from the official Moonsharp project.
 

@@ -1,4 +1,13 @@
-﻿using Avalon.Common.Interfaces;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Avalon.Common.Interfaces;
 using Avalon.Common.Models;
 using Newtonsoft.Json;
 using System;
@@ -207,6 +216,17 @@ namespace Avalon.Common.Settings
                 this.ProfileSettings.MacroList.Add(new Macro(101, "F12", ""));       // Key.F12
             }
 
+            // Remove any temporary items that were saved.
+            if (this.ProfileSettings.ReplacementTriggerList.Any())
+            {
+                for (int i = this.ProfileSettings.ReplacementTriggerList.Count - 1; i >= 0; i--)
+                {
+                    if (this.ProfileSettings.ReplacementTriggerList[i].Temp)
+                    {
+                        this.ProfileSettings.ReplacementTriggerList.RemoveAt(i);
+                    }
+                }
+            }
         }
 
         /// <summary>

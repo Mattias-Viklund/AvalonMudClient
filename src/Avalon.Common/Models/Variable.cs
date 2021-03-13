@@ -1,7 +1,17 @@
-﻿using Avalon.Common.Interfaces;
+﻿/*
+ * Avalon Mud Client
+ *
+ * @project lead      : Blake Pell
+ * @website           : http://www.blakepell.com
+ * @copyright         : Copyright (c), 2018-2021 All rights reserved.
+ * @license           : MIT
+ */
+
+using Avalon.Common.Interfaces;
 using Newtonsoft.Json;
 using System.ComponentModel;
 using Argus.Extensions;
+using Avalon.Lua;
 
 namespace Avalon.Common.Models
 {
@@ -174,26 +184,25 @@ namespace Avalon.Common.Models
                 if (value != _onChangeEvent)
                 {
                     _onChangeEvent = value;
+
+                    if (this.LuaScriptOnChange == null)
+                    {
+                        // TODO: This probably needs a real ID.
+                        this.LuaScriptOnChange = new LuaScript(this.Key);
+                    }
+
+                    this.LuaScriptOnChange.Code = value;
+                    this.LuaScriptOnChange.Updated = true;
                     OnPropertyChanged(nameof(this.OnChangeEvent));
                 }
             }
         }
 
-        private string _onClickEvent;
-
-        /// <inheritdoc />
-        public string OnClickEvent
-        {
-            get => _onClickEvent;
-            set
-            {
-                if (value != _onClickEvent)
-                {
-                    _onClickEvent = value;
-                    OnPropertyChanged(nameof(this.OnClickEvent));
-                }
-            }
-        }
+        /// <summary>
+        /// Represents a Lua script object for the OnChange event.
+        /// </summary>
+        [JsonIgnore]
+        public LuaScript LuaScriptOnChange { get; set; }
 
         /// <summary>
         /// A self reference used to ease binding scenario.  This property will be marked as
