@@ -101,7 +101,7 @@ namespace Avalon
                                 }
 
                                 // This function is wrapped around the Lua the user provides.  It accepts a varargs (...) and
-                                // the function can select(1, ...) to get the values we pass in.
+                                // the function can select(1, ...) to get the values we pass in.  Sync call for now
                                 var luaResult = Interp.LuaCaller.ExecuteShared(trigger.LuaScript.FunctionName, paramList);
 
                                 if (!luaResult.IsNil())
@@ -291,7 +291,7 @@ namespace Avalon
                             item.LuaScript.Updated = false;
                         }
 
-                        var luaResult = Interp.LuaCaller.ExecuteShared(item.LuaScript.FunctionName, paramList);
+                        var luaResult = await Interp.LuaCaller.ExecuteSharedAsync(item.LuaScript.FunctionName, paramList);
                     }
 
                     // Check if we're supposed to move this line somewhere else.

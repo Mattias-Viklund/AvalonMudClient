@@ -290,7 +290,8 @@ namespace Avalon
                             paramList[i] = first.Item2.ParseWord(i, ' ');
                         }
 
-                        this.LuaCaller.ExecuteShared(alias.LuaScript.FunctionName, paramList);
+                        // Fire and forget
+                        this.LuaCaller.ExecuteSharedAsync(alias.LuaScript.FunctionName, paramList);
 
                         return list;
                     }

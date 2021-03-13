@@ -1299,6 +1299,27 @@ namespace Avalon
         }
 
         /// <summary>
+        /// Executes a cached Lua script on the UI thread.
+        /// </summary>
+        /// <param name="functionName"></param>
+        /// <param name="args"></param>
+        public async Task ExecuteLuaSharedAsync(string functionName, string[] args)
+        {
+            // If it has access directly send it and return, otherwise we'll use the dispatcher to queue it up on the UI thread.
+            if (Application.Current.Dispatcher.CheckAccess())
+            {
+                _ = await App.MainWindow.Interp.LuaCaller.ExecuteSharedAsync(functionName, args);
+                return;
+            }
+
+            await Application.Current.Dispatcher.InvokeAsync(new Action(async () =>
+            {
+                // This is all that's going to execute as it clears the list.. we can "fire and forget".
+                _ = await App.MainWindow.Interp.LuaCaller.ExecuteSharedAsync(functionName, args);
+            }));
+        }
+
+        /// <summary>
         /// A StringBuilder for holding scraped data.
         /// </summary>
         public StringBuilder Scrape { get; set; } = new StringBuilder();

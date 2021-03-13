@@ -355,6 +355,65 @@ namespace Avalon.Lua
         }
 
         /// <summary>
+        /// Executes a shared Lua script synchronously.  This script re-use should be more memory efficient
+        /// and use less CPU cycles than loading the a new Script each time (although that method provides a
+        /// clean environment each time).
+        /// </summary>
+        /// <param name="functionName"></param>
+        /// <param name="args"></param>
+        /// <remarks>
+        /// MoonSharp is capable of accepting an object[] and converting those values to the
+        /// correct types.  Should that be required add the functionality in.  Since this is only called
+        /// from RegEx data now and that's always a string type returned we're avoiding the conversion code
+        /// all together.
+        /// </remarks>
+        public async Task<DynValue> ExecuteSharedAsync(string functionName, params string[] args)
+        {
+            var val = await Application.Current.Dispatcher.InvokeAsync((async () =>
+            {
+                try
+                {
+                    IncrementCounter(LuaCounter.ScriptsRun);
+                    DynValue fnc = this.SharedScript.Globals.Get(functionName);
+
+                    // If the function doesn't exist report the error and get out.  The caller should have
+                    // loaded the function already.
+                    if (fnc.IsNil())
+                    {
+                        IncrementCounter(LuaCounter.ErrorCount);
+                        LogException($"Lua error: Function '{functionName}' was not found.");
+                        return DynValue.Nil;
+                    }
+
+                    IncrementCounter(LuaCounter.ActiveScripts);
+                    IncrementCounter(LuaCounter.ScriptsRunFromCache);
+
+                    var ect = new ExecutionControlToken();
+
+                    return await App.MainWindow.Interp.LuaCaller.SharedScript.CallAsync(ect, fnc, args);
+                }
+                catch (Exception ex)
+                {
+                    IncrementCounter(LuaCounter.ErrorCount);
+                    LogException(ex: ex);
+
+                    // Cancel pending sends with the mud in case something went haywire
+                    SendCancelCommandAsync();
+                }
+                finally
+                {
+                    DecrementCounter(LuaCounter.ActiveScripts);
+                }
+
+                return DynValue.Nil;
+
+            }), DispatcherPriority.Normal).Result;
+
+            return val;
+        }
+
+
+        /// <summary>
         /// Loads a Lua function that can be reused if it is an exact match that has a varargs
         /// signature, e.g. "function do_something(...)".  Every time this is called a new instance
         /// of the script will be loaded.
