@@ -785,6 +785,27 @@ namespace MoonSharp.Interpreter
             return this.CallAsync(ecToken, function, dargs);
         }
 
+        /// <summary>
+        /// Asynchronously calls the specified function.
+        /// </summary>
+        /// <param name="ecToken">The execution control token to be associated with the execution of this function</param>
+        /// <param name="function">The Lua/MoonSharp function to be called</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        /// <returns>
+        /// The return value(s) of the function call.
+        /// </returns>
+        /// <exception cref="System.ArgumentException">Thrown if function is not of DataType.Function</exception>
+        public Task<DynValue> CallAsync(ExecutionControlToken ecToken, DynValue function, params string[] args)
+        {
+            var dargs = new DynValue[args.Length];
+
+            for (int i = 0; i < dargs.Length; i++)
+            {
+                dargs[i] = DynValue.NewString(args[i]);
+            }
+
+            return this.CallAsync(ecToken, function, dargs);
+        }
 
         /// <summary>
         /// Asynchronously calls the specified function.
