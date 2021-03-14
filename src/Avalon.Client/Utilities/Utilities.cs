@@ -56,18 +56,20 @@ namespace Avalon.Utilities
         }
 
         /// <summary>
+        /// Characters that will be removed from incoming data via <see cref="RemoveUnsupportedCharacters"/>.
+        /// </summary>
+        private static HashSet<char> _unsupportedChars = new HashSet<char> { (char)1, (char)249, (char)251, (char)252, (char)255, (char)65533 };
+
+        /// <summary>
         /// Removes unsupported characters or other sets of sequences we don't want parsed.
         /// </summary>
         /// <param name="sb"></param>
         public static void RemoveUnsupportedCharacters(this StringBuilder sb)
         {
-            // Remove single characters we're not supporting, rebuild the string.
-            var removeChars = new HashSet<char> { (char)1, (char)249, (char)251, (char)252, (char)255, (char)65533 };
-
             // Go through the StringBuilder backwards and remove any characters in our HashSet.
             for (int i = sb.Length - 1; i >= 0; i--)
             {
-                if (removeChars.Contains(sb[i]))
+                if (_unsupportedChars.Contains(sb[i]))
                 {
                     sb.Remove(i, 1);
                 }
