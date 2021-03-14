@@ -1032,7 +1032,7 @@ namespace Avalon
                     App.MainWindow.ViewModel.StatusBarText = buf ?? "";
                     break;
                 default:
-                    App.Conveyor.EchoError($"SetText: TextTarget {(int)target} was not found.");
+                    App.Conveyor.EchoError($"SetText: TextTarget {((int)target).ToString()} was not found.");
                     break;
             }
 
