@@ -41,110 +41,8 @@ namespace Avalon
                 return;
             }
 
-            #region "ReplacementTriggers"
-
-            // Replacement Triggers: These will either do a simple replacement on the line or execute a Lua script
-            // that will return a string value that will become the new line.  For performance we allow this to be turned
-            // off in the settings.
-            if (App.Settings.ProfileSettings.ReplacementTriggersEnabled && App.Settings.ProfileSettings.ReplacementTriggerList.Any())
-            {
-                bool found = false;
-                var sb2 = ZString.CreateStringBuilder();
-
-                foreach (var trigger in App.Settings.ProfileSettings.ReplacementTriggerList)
-                {
-                    if (!trigger.Enabled)
-                    {
-                        continue;
-                    }
-
-                    // Simple replacement can go ahead and flop %1.. variables in, the Lua version shouldn't
-                    // do that in IsMatch as it will pass those variables to Lua which should handle them.
-                    var match = trigger.IsMatch(line.Text);
-
-                    if (match.TrySuccess())
-                    {
-                        // We know if it's a success and it's found hasn't been set yet that we will need
-                        // to process it AND the StringBuilder needs to be populated because this is the
-                        // first match (of potentially more).  No point in populating the StringBuilder until
-                        // we know we're going to need it.
-                        if (!found)
-                        {
-                            sb2.AppendLine(line.Text);
-                        }
-
-                        found = true;
-
-                        // If lua function is available, run it, otherwise, do the processed replacement
-                        if (string.IsNullOrWhiteSpace(trigger.OnMatchEvent))
-                        {
-                            sb2.Replace(match.Value, trigger.ProcessedReplacement);
-                        }
-                        else
-                        {
-                            try
-                            {
-                                // Create our param list to pass to the cached Lua function.
-                                var sb = Argus.Memory.StringBuilderPool.Take();
-                                sb.Append(trigger.OnMatchEvent);
-
-                                var paramList = new string[match.Groups.Count + 1];
-                                sb.Replace("%0", line.Text);
-
-                                for (int i = 1; i < match.Groups.Count; i++)
-                                {
-                                    sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
-                                }
-
-                                //var paramList = new string[match.Groups.Count + 1];
-                                //paramList[0] = line.Text;
-
-                                //for (int i = 1; i < match.Groups.Count; i++)
-                                //{
-                                //    paramList[i] = match.Groups[i].Value;
-                                //}
-
-                                var luaResult = Interp.LuaCaller.Execute(sb.ToString());
-
-                                if (!luaResult.IsNil())
-                                {
-                                    sb2.Replace(match.Value, luaResult.String);
-                                    found = true;
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                // If an error occurs, make the found false so it doesn't replace anything with a null or empty.
-                                App.Conveyor.EchoError("An error occurred executing Lua on a replacement trigger.");
-                                App.Conveyor.EchoError(ex.Message);
-                                found = false;
-                            }
-                        }
-                    }
-                }
-
-                if (found)
-                {
-                    // Since looking at the document text creates a string every time, we're going to try to look at only the 
-                    // last line plus the line terminator, since this should be processed right after a line is rendered to the
-                    // terminal should work (because creating a 50,000 line string every pass is a not great approach).
-                    int pos = Math.Clamp(GameTerminal.Document.TextLength - line.FormattedText.Length - 2, 0, GameTerminal.Document.TextLength);
-                    int start = GameTerminal.Document.LastIndexOf(line.FormattedText, pos, GameTerminal.Document.TextLength - pos, StringComparison.Ordinal);
-
-                    // Colorize, then remove 1 for the line ending.
-                    // TODO if entire line is removed it messes up the gag.. figure that out.
-                    if (start >= 0)
-                    {
-                        Colorizer.MudToAnsiColorCodes(ref sb2);
-                        this.GameTerminal.Document.Remove(start, line.FormattedText.Length + 1);
-                        this.GameTerminal.Document.Insert(start, sb2.ToString());
-                    }
-                }
-
-                // Return the ZString StringBuilder via Dispose.
-                sb2.Dispose();
-            }
-            #endregion
+            // Replacement triggers come, they actually alter the line in the terminal.
+            this.ProcessReplacementTriggers(line);
 
             // Go through the immutable system triggers, system triggers are silent in that
             // they won't echo to the terminal window, they also don't adhere to attributes like
@@ -350,6 +248,114 @@ namespace Avalon
                         return;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Process the replacement triggers.  These will do a simple replacement on the line OR execute a Lua script
+        /// that will return a string value that will become the new line.  For performance we allow this to be turned
+        /// off in the settings.
+        /// </summary>
+        /// <param name="line"></param>
+        public void ProcessReplacementTriggers(Line line)
+        {
+            if (App.Settings.ProfileSettings.ReplacementTriggersEnabled && App.Settings.ProfileSettings.ReplacementTriggerList.Any())
+            {
+                bool found = false;
+                var sb2 = ZString.CreateStringBuilder();
+
+                foreach (var trigger in App.Settings.ProfileSettings.ReplacementTriggerList)
+                {
+                    if (!trigger.Enabled)
+                    {
+                        continue;
+                    }
+
+                    // Simple replacement can go ahead and flop %1.. variables in, the Lua version shouldn't
+                    // do that in IsMatch as it will pass those variables to Lua which should handle them.
+                    var match = trigger.IsMatch(line.Text);
+
+                    if (match.TrySuccess())
+                    {
+                        // We know if it's a success and it's found hasn't been set yet that we will need
+                        // to process it AND the StringBuilder needs to be populated because this is the
+                        // first match (of potentially more).  No point in populating the StringBuilder until
+                        // we know we're going to need it.
+                        if (!found)
+                        {
+                            sb2.AppendLine(line.Text);
+                        }
+
+                        found = true;
+
+                        // If lua function is available, run it, otherwise, do the processed replacement
+                        if (string.IsNullOrWhiteSpace(trigger.OnMatchEvent))
+                        {
+                            sb2.Replace(match.Value, trigger.ProcessedReplacement);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                // Create our param list to pass to the cached Lua function.
+                                var sb = Argus.Memory.StringBuilderPool.Take();
+                                sb.Append(trigger.OnMatchEvent);
+
+                                var paramList = new string[match.Groups.Count + 1];
+                                sb.Replace("%0", line.Text);
+
+                                for (int i = 1; i < match.Groups.Count; i++)
+                                {
+                                    sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
+                                }
+
+                                //var paramList = new string[match.Groups.Count + 1];
+                                //paramList[0] = line.Text;
+
+                                //for (int i = 1; i < match.Groups.Count; i++)
+                                //{
+                                //    paramList[i] = match.Groups[i].Value;
+                                //}
+
+                                var luaResult = Interp.LuaCaller.Execute(sb.ToString());
+
+                                if (!luaResult.IsNil())
+                                {
+                                    sb2.Replace(match.Value, luaResult.String);
+                                    found = true;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                // If an error occurs, make the found false so it doesn't replace anything with a null or empty.
+                                App.Conveyor.EchoError("An error occurred executing Lua on a replacement trigger.");
+                                App.Conveyor.EchoError(ex.Message);
+                                found = false;
+                            }
+                        }
+                    }
+                }
+
+                if (found)
+                {
+                    // Since looking at the document text creates a string every time, we're going to try to look at only the 
+                    // last line plus the line terminator, since this should be processed right after a line is rendered to the
+                    // terminal should work (because creating a 50,000 line string every pass is a not great approach).
+                    int pos = Math.Clamp(GameTerminal.Document.TextLength - line.FormattedText.Length - 2, 0, GameTerminal.Document.TextLength);
+                    int start = GameTerminal.Document.LastIndexOf(line.FormattedText, pos, GameTerminal.Document.TextLength - pos, StringComparison.Ordinal);
+
+                    // Colorize, then remove 1 for the line ending.
+                    // TODO if entire line is removed it messes up the gag.. figure that out.
+                    if (start >= 0)
+                    {
+                        Colorizer.MudToAnsiColorCodes(ref sb2);
+                        this.GameTerminal.Document.Remove(start, line.FormattedText.Length + 1);
+                        this.GameTerminal.Document.Insert(start, sb2.ToString());
+                    }
+                }
+
+                // Return the ZString StringBuilder via Dispose.
+                sb2.Dispose();
             }
         }
     }
