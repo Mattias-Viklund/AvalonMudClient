@@ -39,11 +39,6 @@ namespace Avalon.Lua
         public int LuaScriptsRun { get; set; } = 0;
 
         /// <summary>
-        /// The number of Lua scripts that were run from the cache.
-        /// </summary>
-        public int LuaScriptsRunFromCache { get; set; } = 0;
-
-        /// <summary>
         /// The number of Lua scripts that have had an error.
         /// </summary>
         public int LuaErrorCount { get; set; } = 0;
@@ -76,14 +71,9 @@ namespace Avalon.Lua
         private readonly Dictionary<string, DynValue> _clrTypes = new Dictionary<string, DynValue>();
 
         /// <summary>
-        /// A object to use for locking.
+        /// An object for thread locking access to resources.
         /// </summary>
-        private readonly object _lockObject = new object();
-
-        /// <summary>
-        /// A shared <see cref="Script"/> object to allow for reuse of functions.
-        /// </summary>
-        public Script SharedScript;
+        private object _lockObject = new object();
 
         /// <summary>
         /// Constructor
@@ -102,9 +92,6 @@ namespace Avalon.Lua
             UserData.RegisterType<LuaGlobalVariables>();
 
             _luaCmds = UserData.Create(new LuaCommands(_interpreter, _random));
-
-            // Setup the shared script that will allow for function reuse.
-            this.SharedScript = this.CreateScript();
         }
 
         /// <summary>
@@ -192,6 +179,7 @@ namespace Avalon.Lua
         /// Executes a Lua script asynchronously.
         /// </summary>
         /// <param name="luaCode"></param>
+        /// <param name="args"></param>
         public async Task ExecuteAsync(string luaCode)
         {
             if (string.IsNullOrWhiteSpace(luaCode))
@@ -232,7 +220,7 @@ namespace Avalon.Lua
                 catch (Exception ex)
                 {
                     IncrementCounter(LuaCounter.ErrorCount);
-                    LogException(ex: ex);
+                    LogException(luaCode, ex: ex);
 
                     // Cancel pending sends with the mud in case something went haywire
                     await SendCancelCommandAsync();
@@ -248,6 +236,7 @@ namespace Avalon.Lua
         /// Executes a Lua script synchronously.
         /// </summary>
         /// <param name="luaCode"></param>
+        /// <param name="args"></param>
         public DynValue Execute(string luaCode)
         {
             if (string.IsNullOrWhiteSpace(luaCode))
@@ -283,7 +272,7 @@ namespace Avalon.Lua
                 catch (Exception ex)
                 {
                     IncrementCounter(LuaCounter.ErrorCount);
-                    LogException(ex: ex);
+                    LogException(luaCode, ex: ex);
 
                     // Cancel pending sends with the mud in case something went haywire
                     SendCancelCommandAsync();
@@ -297,131 +286,6 @@ namespace Avalon.Lua
             }, DispatcherPriority.Normal);
 
             return val;
-        }
-
-        /// <summary>
-        /// Executes a shared Lua script synchronously.  This script re-use should be more memory efficient
-        /// and use less CPU cycles than loading the a new Script each time (although that method provides a
-        /// clean environment each time).
-        /// </summary>
-        /// <param name="functionName"></param>
-        /// <param name="args"></param>
-        /// <remarks>
-        /// MoonSharp is capable of accepting an object[] and converting those values to the
-        /// correct types.  Should that be required add the functionality in.  Since this is only called
-        /// from RegEx data now and that's always a string type returned we're avoiding the conversion code
-        /// all together.
-        /// </remarks>
-        public DynValue ExecuteShared(string functionName, params string[] args)
-        {
-            var val = Application.Current.Dispatcher.Invoke(() =>
-            {
-                try
-                {
-                    IncrementCounter(LuaCounter.ScriptsRun);
-                    DynValue fnc = this.SharedScript.Globals.Get(functionName);
-
-                    // If the function doesn't exist report the error and get out.  The caller should have
-                    // loaded the function already.
-                    if (fnc.IsNil())
-                    {
-                        IncrementCounter(LuaCounter.ErrorCount);
-                        LogException($"Lua error: Function '{functionName}' was not found.");
-                        return DynValue.Nil;
-                    }
-
-                    IncrementCounter(LuaCounter.ActiveScripts);
-                    IncrementCounter(LuaCounter.ScriptsRunFromCache);
-
-                    return App.MainWindow.Interp.LuaCaller.SharedScript.Call(fnc, args);
-                }
-                catch (Exception ex)
-                {
-                    IncrementCounter(LuaCounter.ErrorCount);
-                    LogException(ex: ex);
-
-                    // Cancel pending sends with the mud in case something went haywire
-                    SendCancelCommandAsync();
-                }
-                finally
-                {
-                    DecrementCounter(LuaCounter.ActiveScripts);
-                }
-
-                return DynValue.Nil;
-            }, DispatcherPriority.Normal);
-
-            return val;
-        }
-
-        /// <summary>
-        /// Executes a shared Lua script synchronously.  This script re-use should be more memory efficient
-        /// and use less CPU cycles than loading the a new Script each time (although that method provides a
-        /// clean environment each time).
-        /// </summary>
-        /// <param name="functionName"></param>
-        /// <param name="args"></param>
-        /// <remarks>
-        /// MoonSharp is capable of accepting an object[] and converting those values to the
-        /// correct types.  Should that be required add the functionality in.  Since this is only called
-        /// from RegEx data now and that's always a string type returned we're avoiding the conversion code
-        /// all together.
-        /// </remarks>
-        public async Task<DynValue> ExecuteSharedAsync(string functionName, params string[] args)
-        {
-            var val = await Application.Current.Dispatcher.InvokeAsync((async () =>
-            {
-                try
-                {
-                    IncrementCounter(LuaCounter.ScriptsRun);
-                    DynValue fnc = this.SharedScript.Globals.Get(functionName);
-
-                    // If the function doesn't exist report the error and get out.  The caller should have
-                    // loaded the function already.
-                    if (fnc.IsNil())
-                    {
-                        IncrementCounter(LuaCounter.ErrorCount);
-                        LogException($"Lua error: Function '{functionName}' was not found.");
-                        return DynValue.Nil;
-                    }
-
-                    IncrementCounter(LuaCounter.ActiveScripts);
-                    IncrementCounter(LuaCounter.ScriptsRunFromCache);
-
-                    var ect = new ExecutionControlToken();
-
-                    return await App.MainWindow.Interp.LuaCaller.SharedScript.CallAsync(ect, fnc, args);
-                }
-                catch (Exception ex)
-                {
-                    IncrementCounter(LuaCounter.ErrorCount);
-                    LogException(ex: ex);
-
-                    // Cancel pending sends with the mud in case something went haywire
-                    SendCancelCommandAsync();
-                }
-                finally
-                {
-                    DecrementCounter(LuaCounter.ActiveScripts);
-                }
-
-                return DynValue.Nil;
-
-            }), DispatcherPriority.Normal).Result;
-
-            return val;
-        }
-
-
-        /// <summary>
-        /// Loads a Lua function that can be reused if it is an exact match that has a varargs
-        /// signature, e.g. "function do_something(...)".  Every time this is called a new instance
-        /// of the script will be loaded.
-        /// </summary>
-        /// <param name="luaCode"></param>
-        public void LoadSharedScript(string luaCode, string id = null)
-        {
-            _ = this.SharedScript.DoString(luaCode, codeFriendlyName: id);
         }
 
         /// <summary>
@@ -520,13 +384,6 @@ namespace Avalon.Lua
                     }
 
                     break;
-                case LuaCounter.ScriptsRunFromCache:
-                    lock (_lockObject)
-                    {
-                        this.LuaScriptsRunFromCache += value;
-                    }
-
-                    break;
             }
         }
 
@@ -565,13 +422,6 @@ namespace Avalon.Lua
                     lock (_lockObject)
                     {
                         this.LuaSqlCommandsRun -= value;
-                    }
-
-                    break;
-                case LuaCounter.ScriptsRunFromCache:
-                    lock (_lockObject)
-                    {
-                        this.LuaScriptsRunFromCache -= value;
                     }
 
                     break;

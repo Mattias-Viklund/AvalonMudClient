@@ -64,25 +64,9 @@ namespace Avalon.HashCommands
                         sb.AppendLine();
                         sb.Append("{CLua Environment Info:{x\r\n");
                         sb.Append("---------------------------------------------------------------------\r\n");
-
-                        double cacheRate;
-
-                        if (lua.LuaScriptsRun == 0)
-                        {
-                            cacheRate = 0;
-                        }
-                        else
-                        {
-                            cacheRate = (((double)lua.LuaScriptsRunFromCache / (double)lua.LuaScriptsRun) * 100);
-                            cacheRate = Math.Round(cacheRate);
-                        }
-
                         sb.AppendFormat(" {{G * {{WActive Lua Scripts Running:{{x        {{C{0}{{x\r\n", lua.ActiveLuaScripts.ToString());
                         sb.AppendFormat(" {{G * {{WTotal Lua Scripts Run:{{x             {{C{0}{{x\r\n", lua.LuaScriptsRun.ToString());
-                        sb.AppendFormat(" {{G * {{WTotal Lua Scripts Run from Cache:{{x  {{C{0}{{x {{c={{C> {{y{1}%{{x {{CCache Utilization{{x\r\n", lua.LuaScriptsRunFromCache.ToString(), cacheRate.ToString());
                         sb.AppendFormat(" {{G * {{WGlobal Variable Count:{{x             {{C{0}{{x\r\n", globalVariableCount.ToString());
-                        sb.AppendFormat(" {{G * {{WGlobal Shared Cache Item Count:{{x    {{C{0}{{x\r\n", lua.SharedScript.Globals.Values.Count().ToString());
-                        sb.AppendFormat(" {{G * {{WGlobal Shared Function Count:{{x      {{C{0}{{x\r\n", lua.SharedScript.Globals.Values.Count(x => x.Function != null).ToString());
                         sb.AppendFormat(" {{G * {{WLua Error Count:{{x                   {{C{0}{{x\r\n", lua.LuaErrorCount.ToString());
                     }
 
@@ -106,11 +90,6 @@ namespace Avalon.HashCommands
 
                         sb.AppendLine();
                     }
-
-                    sb.AppendLine();
-                    sb.Append("{CLua Shared Performance Log:{x\r\n");
-                    sb.Append("---------------------------------------------------------------------\r\n");
-                    sb.AppendLine(lua.SharedScript.PerformanceStats.GetPerformanceLog());
 
                     this.Interpreter.Conveyor.EchoText(sb.ToString());
 

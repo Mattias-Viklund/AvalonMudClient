@@ -102,22 +102,8 @@ namespace Avalon
                     // arg 0 being the key, arg 1 being the old value and arg 2 being the new value.
                     if (!string.IsNullOrWhiteSpace(variable.OnChangeEvent))
                     {
-                        // See if the script has been updated since it's last run, if it has, re-load it and
-                        // then toggle the flag saying it's not updated.
-                        if (variable.LuaScriptOnChange.Updated)
-                        {
-                            App.MainWindow.Interp.LuaCaller.LoadSharedScript(variable.LuaScriptOnChange.Code, $"var_{variable.Key}");
-                            variable.LuaScriptOnChange.Updated = false;
-                        }
-
-                        // The key, the old value (1) and the new value (2).
-                        var paramList = new string[3];
-                        paramList[0] = key;
-                        paramList[1] = variable.Value;
-                        paramList[2] = value;
-
-                        // TODO - Endless loop protection if they set the value of THIS variable in the Lua script.
-                        this.ExecuteLuaShared(variable.LuaScriptOnChange.FunctionName, paramList);
+                        // TODO - Endless loop protection if they set the value of this variable in the Lua script.
+                        this.ExecuteLuaAsync(variable.OnChangeEvent.Replace("%1", variable.Value).Replace("%2", value));
                     }
 
                     variable.Value = value;
@@ -1274,48 +1260,6 @@ namespace Avalon
             {
                 // This is all that's going to execute as it clears the list.. we can "fire and forget".
                 await App.MainWindow.Interp.LuaCaller.ExecuteAsync(lua);
-            }));
-        }
-
-        /// <summary>
-        /// Executes a cached Lua script on the UI thread.
-        /// </summary>
-        /// <param name="functionName"></param>
-        /// <param name="args"></param>
-        public async Task ExecuteLuaShared(string functionName, string[] args)
-        {
-            // If it has access directly send it and return, otherwise we'll use the dispatcher to queue it up on the UI thread.
-            if (Application.Current.Dispatcher.CheckAccess())
-            {
-                _ = App.MainWindow.Interp.LuaCaller.ExecuteShared(functionName, args);
-                return;
-            }
-
-            await Application.Current.Dispatcher.InvokeAsync(new Action(async () =>
-            {
-                // This is all that's going to execute as it clears the list.. we can "fire and forget".
-                _ = App.MainWindow.Interp.LuaCaller.ExecuteShared(functionName, args);
-            }));
-        }
-
-        /// <summary>
-        /// Executes a cached Lua script on the UI thread.
-        /// </summary>
-        /// <param name="functionName"></param>
-        /// <param name="args"></param>
-        public async Task ExecuteLuaSharedAsync(string functionName, string[] args)
-        {
-            // If it has access directly send it and return, otherwise we'll use the dispatcher to queue it up on the UI thread.
-            if (Application.Current.Dispatcher.CheckAccess())
-            {
-                _ = await App.MainWindow.Interp.LuaCaller.ExecuteSharedAsync(functionName, args);
-                return;
-            }
-
-            await Application.Current.Dispatcher.InvokeAsync(new Action(async () =>
-            {
-                // This is all that's going to execute as it clears the list.. we can "fire and forget".
-                _ = await App.MainWindow.Interp.LuaCaller.ExecuteSharedAsync(functionName, args);
             }));
         }
 

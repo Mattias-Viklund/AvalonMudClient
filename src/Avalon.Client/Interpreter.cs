@@ -274,24 +274,28 @@ namespace Avalon
                     {
                         list.Clear();
 
-                        if (alias.LuaScript.Updated)
+                        // Alias where the arguments are specified, we will support up to 9 arguments at this time.  Only do
+                        // the replacements if the string contains a percent sign.
+                        if (alias.Command.Contains("%", StringComparison.Ordinal))
                         {
-                            this.LuaCaller.LoadSharedScript(alias.LuaScript.Code, alias.AliasExpression);
-                            alias.LuaScript.Updated = false;
+                            var sb = new StringBuilder(alias.Command);
+
+                            // %0 will represent the entire matched string.
+                            sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
+
+                            // %1-%9
+                            for (int i = 1; i <= 9; i++)
+                            {
+                                sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
+                            }
+
+                            // This is all that's going to execute as it clears the list.. we can "fire and forget".
+                            this.LuaCaller.ExecuteAsync(sb.ToString());
                         }
-
-                        // Create our param list to pass to the cached Lua function.
-                        var paramList = new string[10];
-                        paramList[0] = first.Item2;
-
-                        // We'll support up to nine params for now.  TODO: Only get what's there.
-                        for (int i = 1; i <= 9; i++)
+                        else
                         {
-                            paramList[i] = first.Item2.ParseWord(i, ' ');
+                            this.LuaCaller.ExecuteAsync(alias.Command);
                         }
-
-                        // Fire and forget
-                        this.LuaCaller.ExecuteSharedAsync(alias.LuaScript.FunctionName, paramList);
 
                         return list;
                     }

@@ -30,9 +30,5 @@ namespace Avalon.Lua
         /// The number of SQL statements that have been run in the instance of the LuaCaller.
         /// </summary>
         SqlCount,
-        /// <summary>
-        /// The number of Lua scripts run from the Lua cache.
-        /// </summary>
-        ScriptsRunFromCache
     }
 }

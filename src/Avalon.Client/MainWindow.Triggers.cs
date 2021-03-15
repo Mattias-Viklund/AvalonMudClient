@@ -85,28 +85,31 @@ namespace Avalon
                             try
                             {
                                 // Create our param list to pass to the cached Lua function.
+                                var sb = Argus.Memory.StringBuilderPool.Take();
+                                sb.Append(trigger.OnMatchEvent);
+
                                 var paramList = new string[match.Groups.Count + 1];
-                                paramList[0] = line.Text;
+                                sb.Replace("%0", line.Text);
 
                                 for (int i = 1; i < match.Groups.Count; i++)
                                 {
-                                    paramList[i] = match.Groups[i].Value;
+                                    sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
                                 }
 
-                                // The Lua was changed, update it and then flag it as not changed.
-                                if (trigger.LuaScript.Updated)
-                                {
-                                    Interp.LuaCaller.LoadSharedScript(trigger.LuaScript.Code, trigger.Id);
-                                    trigger.LuaScript.Updated = false;
-                                }
+                                //var paramList = new string[match.Groups.Count + 1];
+                                //paramList[0] = line.Text;
 
-                                // This function is wrapped around the Lua the user provides.  It accepts a varargs (...) and
-                                // the function can select(1, ...) to get the values we pass in.  Sync call for now
-                                var luaResult = Interp.LuaCaller.ExecuteShared(trigger.LuaScript.FunctionName, paramList);
+                                //for (int i = 1; i < match.Groups.Count; i++)
+                                //{
+                                //    paramList[i] = match.Groups[i].Value;
+                                //}
+
+                                var luaResult = Interp.LuaCaller.Execute(sb.ToString());
 
                                 if (!luaResult.IsNil())
                                 {
                                     sb2.Replace(match.Value, luaResult.String);
+                                    found = true;
                                 }
                             }
                             catch (Exception ex)
@@ -272,26 +275,10 @@ namespace Avalon
                         // If it has text but it's not lua, send it to the interpreter.
                         await Interp.Send(item.ProcessedCommand, false, false);
                     }
-                    else if (item.IsLua)
+                    else if (item.IsLua && !string.IsNullOrWhiteSpace(item.ProcessedCommand))
                     {
-                        // Create our param list to pass to the cached Lua function.
-                        var paramList = new string[item.Match.Groups.Count + 1];
-                        paramList[0] = line.Text;
-
-                        for (int i = 1; i < item.Match.Groups.Count; i++)
-                        {
-                            paramList[i] = item.Match.Groups[i].Value;
-                        }
-
-                        // See if the script has been updated since it's last run, if it has, re-load it and
-                        // then toggle the flag saying it's not updated.
-                        if (item.LuaScript.Updated)
-                        {
-                            Interp.LuaCaller.LoadSharedScript(item.LuaScript.Code, item.Identifier);
-                            item.LuaScript.Updated = false;
-                        }
-
-                        var luaResult = await Interp.LuaCaller.ExecuteSharedAsync(item.LuaScript.FunctionName, paramList);
+                        // If it has text and it IS lua, send it to the LUA engine.
+                        await Interp.LuaCaller.ExecuteAsync(item.ProcessedCommand);
                     }
 
                     // Check if we're supposed to move this line somewhere else.
