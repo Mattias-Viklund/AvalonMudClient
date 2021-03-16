@@ -24,6 +24,7 @@ using System.Windows.Threading;
 using Avalon.Extensions;
 using MahApps.Metro.IconPacks;
 using System.ComponentModel;
+using Avalon.Common.Scripting;
 using Avalon.Common.Triggers;
 
 namespace Avalon.Lua
@@ -31,7 +32,7 @@ namespace Avalon.Lua
     /// <summary>
     /// C# methods that are exposed to LUA.
     /// </summary>
-    public class LuaCommands
+    public class LuaCommands : IScriptCommands
     {
         public LuaCommands(IInterpreter interp, Random rnd)
         {

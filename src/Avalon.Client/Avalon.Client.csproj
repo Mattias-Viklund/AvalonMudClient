@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -12,9 +12,9 @@
     <RootNamespace>Avalon</RootNamespace>
     <AssemblyName>Avalon</AssemblyName>
     <ApplicationIcon>Sword.ico</ApplicationIcon>
-    <Version>2021.2.18.1</Version>
-    <AssemblyVersion>2021.2.18.1</AssemblyVersion>
-    <FileVersion>2021.2.18.1</FileVersion>
+    <Version>2021.3.15.1</Version>
+    <AssemblyVersion>2021.3.15.1</AssemblyVersion>
+    <FileVersion>2021.3.15.1</FileVersion>
     <LangVersion>8.0</LangVersion>    
     <Product>Avalon Mud Client</Product>
     <RepositoryUrl>https://github.com/blakepell/AvalonMudClient</RepositoryUrl>

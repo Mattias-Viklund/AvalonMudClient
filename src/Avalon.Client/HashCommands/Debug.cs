@@ -9,8 +9,11 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Media.TextFormatting;
 using Avalon.Common.Interfaces;
 using Avalon.Common.Models;
+using Avalon.Common.Scripting;
 using MoonSharp.Interpreter;
 
 namespace Avalon.HashCommands
@@ -19,6 +22,7 @@ namespace Avalon.HashCommands
     {
         public Debug(IInterpreter interp) : base(interp)
         {
+            this.IsAsync = false;
         }
 
         private DynValue Code { get; set; }
@@ -27,8 +31,31 @@ namespace Avalon.HashCommands
 
         public override string Description { get; } = "Runs some debugging code.";
 
+        public override async Task ExecuteAsync()
+        {
+            var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
+            var engine = new NLuaEngine(this.Interpreter, cmds);
+
+            for (int i = 0; i < 20; i++)
+            {
+                await engine.ExecuteAsync($"lua:LogInfo('{i.ToString()}')\nreturn 0");
+                await Task.Delay(250);
+            }
+
+            //object ret = engine.Execute("local buf = lua:SetVariable(\"Character\", \"LuaGuy\")\nlocal buf = lua:GetVariable(\"Character\")\nlua:LogInfo(buf)");
+        }
+
         public override void Execute()
         {
+            var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
+
+            var engine = new NLuaEngine(this.Interpreter, cmds);
+            engine.Test();
+            
+            //object ret = engine.Execute("local buf = lua:SetVariable(\"Character\", \"LuaGuy\")\nlocal buf = lua:GetVariable(\"Character\")\nlua:LogInfo(buf)");
+
+            //App.Conveyor.EchoInfo(ret.ToString());
+
             //App.InstanceGlobals.TriggersLockedForUpdate = !App.InstanceGlobals.TriggersLockedForUpdate;
 
             //if (App.InstanceGlobals.ReplacementTriggers.Count !=
