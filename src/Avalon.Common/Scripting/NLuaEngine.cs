@@ -12,67 +12,56 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Argus.Memory;
+using Avalon.Common.Models;
 
 namespace Avalon.Common.Scripting
 {
     public class NLuaEngine : IScriptEngine
     {
+        internal static ObjectPool<NLua.Lua> LuaMemoryPool { get; set; }
+
         private IScriptCommands _cmds;
+
+        public IInterpreter Interpreter { get; set; }
 
         public NLuaEngine(IInterpreter interp, IScriptCommands cmds)
         {
             this.Interpreter = interp;
             _cmds = cmds;
+
+            LuaMemoryPool = new ObjectPool<NLua.Lua>
+            {
+                ReturnAction = a =>
+                {
+                }
+            };
+
         }
 
-        public IInterpreter Interpreter { get; set; }
-
-        public object Execute(string code)
+        public T Execute<T>(string code)
         {
-            using (var lua = new NLua.Lua())
+            var lua = LuaMemoryPool.Get();
+            lua["lua"] = _cmds;
+            var ret = lua.DoString(code);
+
+            LuaMemoryPool.Return(lua);
+
+            if (ret.Length > 0)
             {
-                lua["lua"] = _cmds;
-                return lua.DoString(code)[0];
+                return (T)ret[0];
             }
+
+            return default(T);
         }
 
-        public async Task<object> ExecuteAsync(string code)
+        public Task<T> ExecuteAsync<T>(string code)
         {
-            // do some stuff
-            var task = Task.Run(() =>
-            {
-                return Execute(code);
-            });
-
-            return await task;
-        }
-
-        public void Test()
-        {
-            using (var lua = new NLua.Lua())
-            {
-                lua["lua"] = _cmds;
-
-                Parallel.For(0, 100,
-                    index => {
-                        lua.DoString("lua:LogInfo('{index}')");
-                    });
-            }
-        }
-
-        public object ExecuteFunction(string functionName, params object[] args)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<object> ExecuteFunctionAsync(string functionName, params object[] args)
-        {
-            throw new NotImplementedException();
+            return Task.Run(() => this.Execute<T>(code));
         }
 
         public void GarbageCollect()
         {
-            throw new NotImplementedException();
         }
     }
 }

@@ -617,7 +617,6 @@ namespace MoonSharp.Interpreter
                 .ContinueWith(prevTask => this.CallAsync(ecToken, prevTask.Result).Result);
         }
 
-
         /// <summary>
         /// Asynchronously loads and executes a stream containing a Lua/MoonSharp script.
         /// </summary>
@@ -761,7 +760,6 @@ namespace MoonSharp.Interpreter
         {
             return Task.Factory.StartNew(() => this.Internal_Call(ecToken, function, args));
         }
-
 
         /// <summary>
         /// Asynchronously calls the specified function.

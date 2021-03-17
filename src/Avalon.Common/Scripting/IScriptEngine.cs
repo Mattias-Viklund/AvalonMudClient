@@ -16,13 +16,9 @@ namespace Avalon.Common.Scripting
     {
         IInterpreter Interpreter { get; set; }
 
-        object Execute(string code);
+        T Execute<T>(string code);
 
-        Task<object> ExecuteAsync(string code);
-
-        object ExecuteFunction(string functionName, params object[] args);
-
-        Task<object> ExecuteFunctionAsync(string functionName, params object[] args);
+        Task<T> ExecuteAsync<T>(string code);
 
         void GarbageCollect();
     }
