@@ -24,6 +24,7 @@ using System.Windows.Threading;
 using Avalon.Extensions;
 using MahApps.Metro.IconPacks;
 using System.ComponentModel;
+using System.Threading;
 using Avalon.Common.Scripting;
 using Avalon.Common.Triggers;
 
@@ -602,6 +603,26 @@ namespace Avalon.Lua
         {
             // ReSharper disable once AsyncConverter.AsyncWait
             Task.Delay(milliseconds).Wait();
+        }
+
+        /// <summary>
+        /// Pauses the lua script for a designated amount of milliseconds.  This should work with both
+        /// sync and not sync Lua calls.
+        /// </summary>
+        /// <param name="milliseconds"></param>
+        [Description("Pauses a Lua script for the designated amount of milliseconds.")]
+        public void Pause(int milliseconds)
+        {
+            DispatcherFrame df = new DispatcherFrame();
+
+            new Thread(() =>
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(milliseconds));
+                df.Continue = false;
+
+            }).Start();
+
+            Dispatcher.PushFrame(df);
         }
 
         /// <summary>

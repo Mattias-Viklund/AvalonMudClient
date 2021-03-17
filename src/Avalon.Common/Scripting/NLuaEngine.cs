@@ -32,21 +32,35 @@ namespace Avalon.Common.Scripting
 
             LuaMemoryPool = new ObjectPool<NLua.Lua>
             {
-                ReturnAction = a =>
+                InitAction = l =>
                 {
+                    // Initiate any setup actions needed for this Lua script.
+                    l["lua"] = _cmds;
+                },
+                ReturnAction = l =>
+                {
+                    if (l.IsExecuting)
+                    {
+                        throw new Exception("Lua object was returned to the pool that was still executing.");
+                    }
                 }
             };
-
         }
 
         public T Execute<T>(string code)
         {
+            // Gets a new or used but ready instance of the a Lua object to use.
             var lua = LuaMemoryPool.Get();
-            lua["lua"] = _cmds;
-            var ret = lua.DoString(code);
 
+            // Execute our code.  Make sure if an exception occurs that the Lua object
+            // is returned to the pool.
+            object[] ret;
+
+            ret = lua.DoString(code);
             LuaMemoryPool.Return(lua);
 
+            // If a result was returned cast it to T and return it, if not, return the default
+            // which will be null for reference types.
             if (ret.Length > 0)
             {
                 return (T)ret[0];
@@ -58,10 +72,6 @@ namespace Avalon.Common.Scripting
         public Task<T> ExecuteAsync<T>(string code)
         {
             return Task.Run(() => this.Execute<T>(code));
-        }
-
-        public void GarbageCollect()
-        {
         }
     }
 }

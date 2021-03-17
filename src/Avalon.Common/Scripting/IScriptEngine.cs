@@ -12,6 +12,9 @@ using Avalon.Common.Interfaces;
 
 namespace Avalon.Common.Scripting
 {
+    /// <summary>
+    /// The implementation structure for a hosted scripting engine.
+    /// </summary>
     public interface IScriptEngine
     {
         IInterpreter Interpreter { get; set; }
@@ -19,7 +22,5 @@ namespace Avalon.Common.Scripting
         T Execute<T>(string code);
 
         Task<T> ExecuteAsync<T>(string code);
-
-        void GarbageCollect();
     }
 }

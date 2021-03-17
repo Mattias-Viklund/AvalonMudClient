@@ -250,6 +250,13 @@ namespace Avalon.Common.Scripting
         void Sleep(int milliseconds);
 
         /// <summary>
+        /// Pauses the lua script for a designated amount of milliseconds.  This should work with both
+        /// sync and not sync Lua calls.
+        /// </summary>
+        /// <param name="milliseconds"></param>
+        void Pause(int milliseconds);
+
+        /// <summary>
         /// Returns a random number.
         /// </summary>
         /// <param name="low"></param>
