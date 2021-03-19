@@ -7,6 +7,8 @@
  * @license           : MIT
  */
 
+using Avalon.Common.Models;
+
 namespace Avalon.Common.Interfaces
 {
     /// <summary>
@@ -50,6 +52,12 @@ namespace Avalon.Common.Interfaces
         /// If the alias should execute it's command in the Lua scripting engine.
         /// </summary>
         bool IsLua { get; set; }
+
+        /// <summary>
+        /// How the command should be executed (as a command or sent to a different output like
+        /// a script engine or even to a file).
+        /// </summary>
+        public ExecuteType ExecuteAs { get; set; }
 
         /// <summary>
         /// If the alias is locked or not.  A locked alias will not be updated by the package

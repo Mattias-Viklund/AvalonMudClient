@@ -9,6 +9,7 @@
 
 using System;
 using System.Text.RegularExpressions;
+using Avalon.Common.Models;
 
 namespace Avalon.Common.Interfaces
 {
@@ -122,6 +123,12 @@ namespace Avalon.Common.Interfaces
         /// a CLR trigger.
         /// </summary>
         public IConveyor Conveyor { get; set; }
+
+        /// <summary>
+        /// How the command should be executed (as a command or sent to a different output like
+        /// a script engine or even to a file).
+        /// </summary>
+        public ExecuteType ExecuteAs { get; set; }
 
     }
 }
