@@ -20,6 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalon.Colors;
 using System.Text;
+using Avalon.Common.Scripting;
 using Cysharp.Text;
 
 namespace Avalon
@@ -270,7 +271,7 @@ namespace Avalon
                     alias.Count++;
 
                     // If the alias is Lua then variables will be swapped in if necessary and then executed.
-                    if (alias.IsLua)
+                    if (alias.ExecuteAs == ExecuteType.LuaMoonsharp)
                     {
                         list.Clear();
 

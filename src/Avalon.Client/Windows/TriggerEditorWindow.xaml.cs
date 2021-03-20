@@ -76,6 +76,17 @@ namespace Avalon
 
             ComboBoxRedirectTo.ItemsSource = dict;
             ComboBoxRedirectTo.SelectedValue = (int)trigger.MoveTo;
+
+            // Not using the enum here pains me.
+            var dictExecuteAs = new Dictionary<int, string>
+            {
+                { 0, "Command" },
+                { 1, "Lua: MoonSharp" },
+                { 2, "Lua: NLua" }
+            };
+
+            ComboBoxExecuteAs.ItemsSource = dictExecuteAs;
+            ComboBoxExecuteAs.SelectedValue = (int)trigger.ExecuteAs;
         }
 
         /// <summary>
@@ -137,6 +148,11 @@ namespace Avalon
                 if (ComboBoxRedirectTo.SelectedValue != null)
                 {
                     this.Trigger.MoveTo = (TerminalTarget)ComboBoxRedirectTo.SelectedValue;
+                }
+
+                if (ComboBoxExecuteAs.SelectedValue != null)
+                {
+                    this.Trigger.ExecuteAs = (ExecuteType) ComboBoxExecuteAs.SelectedValue;
                 }
 
                 // Just in case this will make sure the Conveyor is setup on this trigger.
