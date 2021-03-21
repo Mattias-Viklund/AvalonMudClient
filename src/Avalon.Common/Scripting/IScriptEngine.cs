@@ -43,5 +43,12 @@ namespace Avalon.Common.Scripting
         /// <param name="code"></param>
         /// <returns></returns>
         Task<T> ExecuteAsync<T>(string code);
+
+        /// <summary>
+        /// Executes the scripting languages garbage collecting feature if it exists.  As an
+        /// example, MoonSharp's Lua interpreter uses the default .NET GC while NLua defers
+        /// to the native Lua garbage collection.
+        /// </summary>
+        void GarbageCollect();
     }
 }

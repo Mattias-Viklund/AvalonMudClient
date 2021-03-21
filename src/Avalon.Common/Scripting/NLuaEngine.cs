@@ -7,7 +7,6 @@
  * @license           : MIT
  */
 
-
 using Argus.Memory;
 using Avalon.Common.Interfaces;
 using System;
@@ -58,6 +57,23 @@ namespace Avalon.Common.Scripting
                     }
                 }
             };
+        }
+
+        /// <summary>
+        /// Calls collectgarbage() against the native Lua implementation.  This does NOT collect
+        /// the .NET NLua objects in the memory pool itself.
+        /// </summary>
+        public void GarbageCollect()
+        {
+            LuaMemoryPool.InvokeAll((item) =>
+            {
+                if (item.IsExecuting)
+                {
+                    return;
+                }
+
+                item.DoString("collectgarbage()");
+            });
         }
 
         /// <inheritdoc cref="Execute{T}"/>

@@ -76,7 +76,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Argus.Core" Version="2021.3.17.1" />
+    <PackageReference Include="Argus.Core" Version="2021.3.21.1" />
     <PackageReference Include="AvalonEdit" Version="6.1.1" />
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
     <PackageReference Include="MahApps.Metro.IconPacks.Material" Version="4.8.0" />
