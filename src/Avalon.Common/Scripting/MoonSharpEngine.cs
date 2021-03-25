@@ -117,15 +117,6 @@ namespace Avalon.Common.Scripting
         }
 
         /// <summary>
-        /// Sends a cancel command to the game if one is defined in the settings.  Some muds have a short
-        /// circuit command that will cancel all other commands that have been inputted on the server side.
-        /// </summary>
-        public Task SendCancelCommandAsync()
-        {
-            return this.Interpreter.Send("~", true, false);
-        }
-
-        /// <summary>
         /// Creates a <see cref="Script"/> with the Lua global variables and custom commands
         /// setup for use.
         /// </summary>
@@ -164,11 +155,37 @@ namespace Avalon.Common.Scripting
         /// <inheritdoc cref="Execute{T}"/>
         public T Execute<T>(string code)
         {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return DynValue.Nil.ToObject<T>();
+            }
+
+            var lua = this.CreateScript();
+
+            try
+            {
+                return lua.DoString(code).ToObject<T>();
+            }
+            catch
+            {
+                this.ScriptCommands.Send("~");
+                throw;
+            }
         }
 
         /// <inheritdoc cref="ExecuteAsync{T}"/>
-        public Task<T> ExecuteAsync<T>(string code)
+        public async Task<T> ExecuteAsync<T>(string code)
         {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return DynValue.Nil.ToObject<T>();
+            }
+
+            var lua = this.CreateScript();
+            var executionControlToken = new ExecutionControlToken();
+            var ret = await lua.DoStringAsync(executionControlToken, code);
+
+            return ret.ToObject<T>();
         }
     }
 }
