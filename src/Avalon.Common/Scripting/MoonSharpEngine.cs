@@ -40,20 +40,9 @@ namespace Avalon.Common.Scripting
         private readonly DynValue _luaCmds;
 
         /// <summary>
-        /// Single static Random object that will need to be locked between usages.  Calls to _random
-        /// should be locked for thread safety as Random is not thread safe.
-        /// </summary>
-        private static Random _random;
-
-        /// <summary>
         /// The currently/dynamically loaded CLR types that can be exposed to Lua.
         /// </summary>
         private readonly Dictionary<string, DynValue> _clrTypes = new Dictionary<string, DynValue>();
-
-        /// <summary>
-        /// An object for thread locking access to resources.
-        /// </summary>
-        private object _lockObject = new object();
 
         /// <summary>
         /// Constructor
@@ -64,9 +53,6 @@ namespace Avalon.Common.Scripting
         {
             this.Interpreter = interp;
             this.ScriptCommands = scriptCommands;
-
-            _random = new Random();
-
             this.GlobalVariables = new MoonSharpGlobalVariables();
 
             // The CLR types we want to expose to Lua need to be registered before UserData.Create
