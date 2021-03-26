@@ -86,15 +86,15 @@ namespace Avalon.Common.Scripting
             // is returned to the pool.
             object[] ret;
 
+            // We want the exception to bubble up but we have to return the object to the
+            // memory pool.
             try
             {
                 ret = lua.DoString(code);
-                LuaMemoryPool.Return(lua);
             }
-            catch
+            finally
             {
                 LuaMemoryPool.Return(lua);
-                throw;
             }
 
             // If a result was returned cast it to T and return it, if not, return the default

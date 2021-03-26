@@ -7,13 +7,12 @@
  * @license           : MIT
  */
 
-using Argus.Memory;
 using Avalon.Common.Interfaces;
+using Avalon.Lua;
+using MoonSharp.Interpreter;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Avalon.Lua;
-using MoonSharp.Interpreter;
 
 namespace Avalon.Common.Scripting
 {
@@ -43,7 +42,7 @@ namespace Avalon.Common.Scripting
         /// The currently/dynamically loaded CLR types that can be exposed to Lua.
         /// </summary>
         private readonly Dictionary<string, DynValue> _clrTypes = new Dictionary<string, DynValue>();
-
+        
         /// <summary>
         /// Constructor
         /// </summary>
