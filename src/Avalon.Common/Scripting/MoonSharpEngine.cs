@@ -162,15 +162,7 @@ namespace Avalon.Common.Scripting
 
             var lua = this.CreateScript();
 
-            try
-            {
-                return lua.DoString(code).ToObject<T>();
-            }
-            catch
-            {
-                this.ScriptCommands.Send("~");
-                throw;
-            }
+            return lua.DoString(code).ToObject<T>();
         }
 
         /// <inheritdoc cref="ExecuteAsync{T}"/>
