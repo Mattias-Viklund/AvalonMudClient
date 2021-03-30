@@ -7,8 +7,8 @@
  * @license           : MIT
  */
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Avalon.Common.Interfaces;
 
 namespace Avalon.Common.Scripting
 {
@@ -17,16 +17,7 @@ namespace Avalon.Common.Scripting
     /// </summary>
     public interface IScriptEngine
     {
-        /// <summary>
-        /// An implementation of C# commands that can be exposed to the scripting engine through
-        /// the means that scripting provides for CLR object access.
-        /// </summary>
-        IScriptCommands ScriptCommands { get; set; }
-
-        /// <summary>
-        /// A reference to the Interpreter that a script may interact with.
-        /// </summary>
-        IInterpreter Interpreter { get; set; }
+        Dictionary<string, object> SharedObjects { get; set; }
 
         /// <summary>
         /// Executes code synchronously and returns <see cref="T"/> or null based.

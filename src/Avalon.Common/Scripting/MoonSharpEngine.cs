@@ -21,76 +21,42 @@ namespace Avalon.Common.Scripting
     /// </summary>
     public class MoonSharpEngine : IScriptEngine
     {
-        /// <inheritdoc cref="ScriptCommands"/>
-        public IScriptCommands ScriptCommands { get; set; }
-
-        /// <inheritdoc cref="Interpreter"/>
-        public IInterpreter Interpreter { get; set; }
-
         /// <summary>
         /// Global variables available to Lua that are shared across all of our Lua sessions.
         /// </summary>
         public MoonSharpGlobalVariables GlobalVariables { get; }
 
         /// <summary>
-        /// Represents a shared instance of the DynValue that holds our LuaCommands object which is CLR
-        /// code that we're exposing to Lua in the "lua" namespace.
+        /// A list of shared objects that will be passed to each Lua script.
         /// </summary>
-        private readonly DynValue _luaCmds;
+        public Dictionary<string, object> SharedObjects { get; set; } = new();
 
-        /// <summary>
-        /// The currently/dynamically loaded CLR types that can be exposed to Lua.
-        /// </summary>
-        private readonly Dictionary<string, DynValue> _clrTypes = new Dictionary<string, DynValue>();
-        
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="interp"></param>
-        /// <param name="scriptCommands"></param>
-        public MoonSharpEngine(IInterpreter interp, IScriptCommands scriptCommands)
+        public MoonSharpEngine()
         {
-            this.Interpreter = interp;
-            this.ScriptCommands = scriptCommands;
-            this.GlobalVariables = new MoonSharpGlobalVariables();
-
-            // The CLR types we want to expose to Lua need to be registered before UserData.Create
-            // can be called.  If they're not registered UserData.Create will return a null.
-            UserData.RegisterType<IScriptCommands>();
             UserData.RegisterType<MoonSharpGlobalVariables>();
-
-            _luaCmds = UserData.Create(scriptCommands);
+            this.GlobalVariables = new MoonSharpGlobalVariables();
         }
 
         /// <summary>
-        /// Register a CLR type for use with Lua.
+        /// Registers an instantiated object (the object and the type).
         /// </summary>
-        /// <param name="t"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="item"></param>
         /// <param name="prefix"></param>
-        public void RegisterType(Type t, string prefix)
+        public void RegisterObject<T>(object item, string prefix)
         {
             // Only add the type in if it hasn't been added previously.
-            if (_clrTypes.ContainsKey(prefix))
+            if (item == null || this.SharedObjects.ContainsKey(prefix))
             {
                 return;
             }
 
-            // Set the actual class that has the Lua commands.
-            var instance = Activator.CreateInstance(t) as ILuaCommand;
+            UserData.RegisterType<T>();
 
-            if (instance == null)
-            {
-                return;
-            }
-
-            instance.Interpreter = this.Interpreter;
-
-            // Register the type now that we know it has been activated and is ready.
-            UserData.RegisterType(t);
-
-            // Save the DynValue which contains the instance to the activated CLR type
-            // and the prefix/namespace it should be available to lua under.
-            _clrTypes.Add(prefix, UserData.Create(instance));
+            this.SharedObjects.Add(prefix, UserData.Create(item));
         }
 
         /// <summary>
@@ -98,7 +64,7 @@ namespace Avalon.Common.Scripting
         /// </summary>
         public void ClearTypes()
         {
-            _clrTypes.Clear();
+            this.SharedObjects.Clear();
         }
 
         /// <summary>
@@ -113,15 +79,11 @@ namespace Avalon.Common.Scripting
                 Options = { CheckThreadAccess = false }
             };
 
-            // Pass the lua script object our object that holds our CLR commands.  This is a DynValue that
-            // has been pre-populated with our LuaCommands instance.
-            lua.Globals.Set("lua", _luaCmds);
-
             // Dynamic types from plugins.  These are created when they are registered and only need to be
             // added into globals here for use.
-            foreach (var item in _clrTypes)
+            foreach (var item in this.SharedObjects)
             {
-                lua.Globals.Set(item.Key, item.Value);
+                lua.Globals.Set(item.Key, (DynValue)item.Value);
             }
 
             // Set the global variables that are specifically only available in Lua.

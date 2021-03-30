@@ -7,15 +7,12 @@
  * @license           : MIT
  */
 
-using System;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Media.TextFormatting;
 using Avalon.Common.Interfaces;
-using Avalon.Common.Models;
 using Avalon.Common.Scripting;
+using Avalon.Lua;
 using MoonSharp.Interpreter;
+using System;
+using System.Threading.Tasks;
 
 namespace Avalon.HashCommands
 {
@@ -34,8 +31,20 @@ namespace Avalon.HashCommands
 
         public override async Task ExecuteAsync()
         {
+//            var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
+//            var engine = new NLuaEngine();
+//            engine.SharedObjects.Add("lua", cmds);
+
+//            await engine.ExecuteAsync<object>($@"
+//for i = 1, 10 do
+//    lua:LogInfo(tostring(i))
+//    lua:Pause(1000)
+//end
+//");
+
             var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
-            var engine = new NLuaEngine(this.Interpreter, cmds);
+            var engine = new MoonSharpEngine();
+            engine.RegisterObject<LuaCommands>(cmds, "lua");
 
             await engine.ExecuteAsync<object>($@"
 for i = 1, 10 do
@@ -43,6 +52,7 @@ for i = 1, 10 do
     lua:Pause(1000)
 end
 ");
+
 
             //var val = await engine.ExecuteAsync<object>("return 25");
             //this.Interpreter.Conveyor.EchoLog($"{val.ToString()}", LogType.Debug);
@@ -62,7 +72,8 @@ end
         public override void Execute()
         {
             var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
-            var engine = new NLuaEngine(this.Interpreter, cmds);
+            var engine = new NLuaEngine();
+            engine.SharedObjects.Add("lua", cmds);
 
             engine.Execute<object>($@"
 for i = 1, 10 do

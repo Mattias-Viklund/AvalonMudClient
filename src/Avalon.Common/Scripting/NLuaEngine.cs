@@ -8,8 +8,8 @@
  */
 
 using Argus.Memory;
-using Avalon.Common.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Avalon.Common.Scripting
@@ -24,28 +24,25 @@ namespace Avalon.Common.Scripting
         /// </summary>
         internal static ObjectPool<NLua.Lua> LuaMemoryPool { get; set; }
 
-        /// <inheritdoc cref="ScriptCommands"/>
-        public IScriptCommands ScriptCommands { get; set; }
-
-        /// <inheritdoc cref="Interpreter"/>
-        public IInterpreter Interpreter { get; set; }
+        /// <summary>
+        /// A list of shared objects that will be passed to each Lua script.
+        /// </summary>
+        public Dictionary<string, object> SharedObjects { get; set; } = new();
 
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="interp"></param>
-        /// <param name="scriptCommands"></param>
-        public NLuaEngine(IInterpreter interp, IScriptCommands scriptCommands)
+        public NLuaEngine()
         {
-            this.Interpreter = interp;
-            this.ScriptCommands = scriptCommands;
-
             LuaMemoryPool = new ObjectPool<NLua.Lua>
             {
                 InitAction = l =>
                 {
-                    // Initiate any setup actions needed for this Lua script.
-                    l["lua"] = this.ScriptCommands;
+                    // Load any shared objects.
+                    foreach (var item in this.SharedObjects)
+                    {
+                        l[item.Key] = item.Value;
+                    }
                 },
                 ReturnAction = l =>
                 {
