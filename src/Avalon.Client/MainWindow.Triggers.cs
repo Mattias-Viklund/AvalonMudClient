@@ -166,7 +166,7 @@ namespace Avalon
                         int start = GameTerminal.Document.Text.LastIndexOf(line.FormattedText, StringComparison.Ordinal);
                         GameTerminal.Document.Insert(start, AnsiColors.DarkCyan);
                     }
-
+                    
                     // Only send if it has something in it.  Use the processed command.
                     if (!string.IsNullOrEmpty(item.ProcessedCommand) && !item.IsLua)
                     {

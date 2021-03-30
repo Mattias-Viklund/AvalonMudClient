@@ -12,28 +12,27 @@ using Avalon.Colors;
 using Avalon.Common.Colors;
 using Avalon.Common.Interfaces;
 using Avalon.Common.Models;
+using Avalon.Common.Triggers;
+using Avalon.Extensions;
+using MahApps.Metro.IconPacks;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
-using Avalon.Extensions;
-using MahApps.Metro.IconPacks;
-using System.ComponentModel;
-using System.Threading;
-using Avalon.Common.Scripting;
-using Avalon.Common.Triggers;
 
 namespace Avalon.Lua
 {
     /// <summary>
     /// C# methods that are exposed to LUA.
     /// </summary>
-    public class LuaCommands : IScriptCommands
+    public class LuaCommands
     {
         public LuaCommands(IInterpreter interp, Random rnd)
         {

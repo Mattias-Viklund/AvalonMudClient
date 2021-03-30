@@ -7,10 +7,9 @@
  * @license           : MIT
  */
 
-using Avalon.Common.Interfaces;
+using Argus.Memory;
 using Avalon.Lua;
 using MoonSharp.Interpreter;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -21,6 +20,11 @@ namespace Avalon.Common.Scripting
     /// </summary>
     public class MoonSharpEngine : IScriptEngine
     {
+        /// <summary>
+        /// A memory pool of idle Script objects that can be re-used.
+        /// </summary>
+        internal static ObjectPool<Script> LuaMemoryPool { get; set; }
+
         /// <summary>
         /// Global variables available to Lua that are shared across all of our Lua sessions.
         /// </summary>
@@ -36,8 +40,33 @@ namespace Avalon.Common.Scripting
         /// </summary>
         public MoonSharpEngine()
         {
+            // The global variables will be created once and registered.  These will be shared
+            // between all script instances.
             UserData.RegisterType<MoonSharpGlobalVariables>();
             this.GlobalVariables = new MoonSharpGlobalVariables();
+
+            LuaMemoryPool = new ObjectPool<Script>
+            {
+                InitAction = l =>
+                {
+                    // Setup Lua
+                    l.Options.CheckThreadAccess = false;
+
+                    // Dynamic types from plugins.  These are created when they are registered and only need to be
+                    // added into globals here for use.
+                    foreach (var item in this.SharedObjects)
+                    {
+                        l.Globals.Set(item.Key, (DynValue)item.Value);
+                    }
+
+                    // Set the global variables that are specifically only available in Lua.
+                    l.Globals["global"] = this.GlobalVariables;
+                },
+                ReturnAction = l =>
+                {
+                }
+            };
+
         }
 
         /// <summary>
@@ -48,6 +77,13 @@ namespace Avalon.Common.Scripting
         /// <param name="prefix"></param>
         public void RegisterObject<T>(object item, string prefix)
         {
+            // Registering any object forces the memory pool to clear since those objects
+            // will need to be loaded
+            if (LuaMemoryPool.Count() > 0)
+            {
+                LuaMemoryPool.Clear();
+            }
+
             // Only add the type in if it hasn't been added previously.
             if (item == null || this.SharedObjects.ContainsKey(prefix))
             {

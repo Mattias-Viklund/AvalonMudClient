@@ -38,7 +38,7 @@ namespace Avalon.Common.Scripting
             {
                 InitAction = l =>
                 {
-                    // Load any shared objects.
+                    // Load any shared objects into the new instance of NLua.
                     foreach (var item in this.SharedObjects)
                     {
                         l[item.Key] = item.Value;
@@ -54,6 +54,17 @@ namespace Avalon.Common.Scripting
                     }
                 }
             };
+        }
+
+        /// <summary>
+        /// Registers an instantiated object with NLua.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="item"></param>
+        /// <param name="prefix"></param>
+        public void RegisterObject<T>(object item, string prefix)
+        {
+            this.SharedObjects.Add(prefix, item);
         }
 
         /// <summary>

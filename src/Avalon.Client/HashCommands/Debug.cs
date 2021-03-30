@@ -47,12 +47,11 @@ namespace Avalon.HashCommands
             engine.RegisterObject<LuaCommands>(cmds, "lua");
 
             await engine.ExecuteAsync<object>($@"
-for i = 1, 10 do
+for i = 1, 5 do    
     lua:LogInfo(tostring(i))
     lua:Pause(1000)
 end
 ");
-
 
             //var val = await engine.ExecuteAsync<object>("return 25");
             //this.Interpreter.Conveyor.EchoLog($"{val.ToString()}", LogType.Debug);
