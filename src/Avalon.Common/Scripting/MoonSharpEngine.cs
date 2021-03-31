@@ -7,6 +7,7 @@
  * @license           : MIT
  */
 
+using System;
 using Argus.Memory;
 using Avalon.Lua;
 using MoonSharp.Interpreter;
@@ -104,35 +105,12 @@ namespace Avalon.Common.Scripting
         }
 
         /// <summary>
-        /// Creates a <see cref="Script"/> with the Lua global variables and custom commands
-        /// setup for use.
-        /// </summary>
-        public Script CreateScript()
-        {
-            // Setup Lua
-            var lua = new Script
-            {
-                Options = { CheckThreadAccess = false }
-            };
-
-            // Dynamic types from plugins.  These are created when they are registered and only need to be
-            // added into globals here for use.
-            foreach (var item in this.SharedObjects)
-            {
-                lua.Globals.Set(item.Key, (DynValue)item.Value);
-            }
-
-            // Set the global variables that are specifically only available in Lua.
-            lua.Globals["global"] = this.GlobalVariables;
-
-            return lua;
-        }
-
-        /// <summary>
-        /// No garbage collection is run for the MoonSharp implementation.
+        /// MoonSharp uses the CLR garbage collector.  We'll just run the same collect call that it
+        /// would run if collectgarbage was called from Lua code.
         /// </summary>
         public void GarbageCollect()
         {
+            GC.Collect(2, GCCollectionMode.Forced);
         }
 
         /// <inheritdoc cref="Execute{T}"/>
@@ -143,9 +121,20 @@ namespace Avalon.Common.Scripting
                 return DynValue.Nil.ToObject<T>();
             }
 
-            var lua = this.CreateScript();
+            // Gets a new or used but ready instance of the a Lua object to use.
+            var lua = LuaMemoryPool.Get();
+            DynValue ret;
 
-            return lua.DoString(code).ToObject<T>();
+            try
+            {
+                ret = lua.DoString(code);
+            }
+            finally
+            {
+                LuaMemoryPool.Return(lua);
+            }
+
+            return ret.ToObject<T>();
         }
 
         /// <inheritdoc cref="ExecuteAsync{T}"/>
@@ -156,9 +145,19 @@ namespace Avalon.Common.Scripting
                 return DynValue.Nil.ToObject<T>();
             }
 
-            var lua = this.CreateScript();
+            // Gets a new or used but ready instance of the a Lua object to use.
+            var lua = LuaMemoryPool.Get();
+            DynValue ret;
             var executionControlToken = new ExecutionControlToken();
-            var ret = await lua.DoStringAsync(executionControlToken, code);
+
+            try
+            {
+                ret = await lua.DoStringAsync(executionControlToken, code);
+            }
+            finally
+            {
+                LuaMemoryPool.Return(lua);
+            }
 
             return ret.ToObject<T>();
         }
