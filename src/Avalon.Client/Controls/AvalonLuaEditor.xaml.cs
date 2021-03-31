@@ -171,7 +171,7 @@ namespace Avalon.Controls
                     };
 
                     // Construct our custom highlighting rule via reflection.
-                    var t = typeof(LuaCommands);
+                    var t = typeof(ScriptCommands);
                     var sb = new StringBuilder();
                     sb.Append(@"\b(");
 

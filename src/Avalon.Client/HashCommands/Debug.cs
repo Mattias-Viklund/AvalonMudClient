@@ -20,7 +20,7 @@ namespace Avalon.HashCommands
     {
         public Debug(IInterpreter interp) : base(interp)
         {
-            this.IsAsync = true;
+            this.IsAsync = false;
         }
 
         private DynValue Code { get; set; }
@@ -31,7 +31,7 @@ namespace Avalon.HashCommands
 
         public override async Task ExecuteAsync()
         {
-//            var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
+//            var cmds = new Avalon.Lua.ScriptCommands(this.Interpreter, new Random());
 //            var engine = new NLuaEngine();
 //            engine.SharedObjects.Add("lua", cmds);
 
@@ -42,11 +42,12 @@ namespace Avalon.HashCommands
 //end
 //");
 
-            var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
+            var cmds = new Avalon.Lua.ScriptCommands(this.Interpreter, new Random());
             var engine = new MoonSharpEngine();
-            engine.RegisterObject<LuaCommands>(cmds, "lua");
+            engine.RegisterObject<ScriptCommands>(cmds, "lua");
 
             await engine.ExecuteAsync<object>($@"
+lua:LogInfo(""{{CN{{cLua{{x"")
 for i = 1, 5 do    
     lua:LogInfo(tostring(i))
     lua:Pause(1000)
@@ -70,12 +71,14 @@ end
 
         public override void Execute()
         {
-            var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
+            var cmds = new Avalon.Lua.ScriptCommands(this.Interpreter, new Random());
             var engine = new NLuaEngine();
-            engine.SharedObjects.Add("lua", cmds);
-
+            engine.RegisterObject<ScriptCommands>(cmds, "lua");
+            
             engine.Execute<object>($@"
-for i = 1, 10 do
+lua:LogInfo(""{{GN{{gLua{{x"")
+x
+for i = 1, 5 do
     lua:LogInfo(tostring(i))
     lua:Pause(1000)
 end
@@ -93,7 +96,7 @@ end
 
         //App.Conveyor.EchoText(sw.ElapsedMilliseconds + "\n", TerminalTarget.Terminal1);
 
-        //var cmds = new Avalon.Lua.LuaCommands(this.Interpreter, new Random());
+        //var cmds = new Avalon.Lua.ScriptCommands(this.Interpreter, new Random());
         //var engine = new NLuaEngine(this.Interpreter, cmds);
 
         //for (int i = 0; i < 10000; i++)

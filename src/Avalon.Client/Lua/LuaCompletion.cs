@@ -35,7 +35,7 @@ namespace Avalon.Lua
                     // Initialize the Lua completion data once.
                     _luaCompletionData = new Dictionary<string, ICompletionData>();
 
-                    var t = typeof(LuaCommands);
+                    var t = typeof(ScriptCommands);
 
                     // This should get all of our methods but exclude ones that are defined on
                     // object like ToString, GetHashCode, Equals, etc.

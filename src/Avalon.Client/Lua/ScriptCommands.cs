@@ -32,9 +32,9 @@ namespace Avalon.Lua
     /// <summary>
     /// C# methods that are exposed to LUA.
     /// </summary>
-    public class LuaCommands
+    public class ScriptCommands
     {
-        public LuaCommands(IInterpreter interp, Random rnd)
+        public ScriptCommands(IInterpreter interp, Random rnd)
         {
             _interpreter = interp;
             _random = rnd;

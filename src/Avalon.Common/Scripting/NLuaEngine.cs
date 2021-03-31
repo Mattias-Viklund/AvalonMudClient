@@ -67,6 +67,13 @@ namespace Avalon.Common.Scripting
             this.SharedObjects.Add(prefix, item);
         }
 
+        /// <inheritdoc cref="Reset"/>
+        public void Reset()
+        {
+            this.SharedObjects.Clear();
+            LuaMemoryPool.Clear();
+        }
+
         /// <summary>
         /// Calls collectgarbage() against the native Lua implementation.  This does NOT collect
         /// the .NET NLua objects in the memory pool itself.

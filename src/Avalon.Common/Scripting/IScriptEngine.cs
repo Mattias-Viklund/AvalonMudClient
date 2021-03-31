@@ -54,5 +54,11 @@ namespace Avalon.Common.Scripting
         /// to the native Lua garbage collection.
         /// </summary>
         void GarbageCollect();
+
+        /// <summary>
+        /// Resets the scripting environment back to the default state.  If any memory pools or
+        /// shared objects are used those are also discarded.
+        /// </summary>
+        void Reset();
     }
 }

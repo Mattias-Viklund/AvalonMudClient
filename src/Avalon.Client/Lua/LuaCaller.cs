@@ -54,7 +54,7 @@ namespace Avalon.Lua
         private readonly IInterpreter _interpreter;
 
         /// <summary>
-        /// Represents a shared instance of the DynValue that holds our LuaCommands object which is CLR
+        /// Represents a shared instance of the DynValue that holds our ScriptCommands object which is CLR
         /// code that we're exposing to Lua in the "lua" namespace.
         /// </summary>
         private readonly DynValue _luaCmds;
@@ -88,10 +88,10 @@ namespace Avalon.Lua
 
             // The CLR types we want to expose to Lua need to be registered before UserData.Create
             // can be called.  If they're not registered UserData.Create will return a null.
-            UserData.RegisterType<LuaCommands>();
+            UserData.RegisterType<ScriptCommands>();
             UserData.RegisterType<LuaGlobalVariables>();
 
-            _luaCmds = UserData.Create(new LuaCommands(_interpreter, _random));
+            _luaCmds = UserData.Create(new ScriptCommands(_interpreter, _random));
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace Avalon.Lua
             };
 
             // Pass the lua script object our object that holds our CLR commands.  This is a DynValue that
-            // has been pre-populated with our LuaCommands instance.
+            // has been pre-populated with our ScriptCommands instance.
             lua.Globals.Set("lua", _luaCmds);
 
             // Dynamic types from plugins.  These are created when they are registered and only need to be
@@ -311,7 +311,7 @@ namespace Avalon.Lua
                 };
 
                 // Pass the lua script object our object that holds our CLR commands.  This is a DynValue that
-                // has been pre-populated with our LuaCommands instance.
+                // has been pre-populated with our ScriptCommands instance.
                 lua.Globals.Set("lua", _luaCmds);
 
                 // Dynamic types from plugins.  These are created when they are registered and only need to be

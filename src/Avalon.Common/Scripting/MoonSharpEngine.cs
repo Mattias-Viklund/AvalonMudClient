@@ -7,10 +7,10 @@
  * @license           : MIT
  */
 
-using System;
 using Argus.Memory;
 using Avalon.Lua;
 using MoonSharp.Interpreter;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -29,7 +29,7 @@ namespace Avalon.Common.Scripting
         /// <summary>
         /// Global variables available to Lua that are shared across all of our Lua sessions.
         /// </summary>
-        public MoonSharpGlobalVariables GlobalVariables { get; }
+        public MoonSharpGlobalVariables GlobalVariables { get; private set; }
 
         /// <summary>
         /// A list of shared objects that will be passed to each Lua script.
@@ -70,12 +70,7 @@ namespace Avalon.Common.Scripting
 
         }
 
-        /// <summary>
-        /// Registers an instantiated object (the object and the type).
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="item"></param>
-        /// <param name="prefix"></param>
+        /// <inheritdoc cref="RegisterObject{T}"/>
         public void RegisterObject<T>(object item, string prefix)
         {
             // Registering any object forces the memory pool to clear since those objects
@@ -91,17 +86,21 @@ namespace Avalon.Common.Scripting
                 return;
             }
 
-            UserData.RegisterType<T>();
+            // Register the type if it's not already registered.
+            if (!UserData.IsTypeRegistered<T>())
+            {
+                UserData.RegisterType<T>();
+            }
 
             this.SharedObjects.Add(prefix, UserData.Create(item));
         }
 
-        /// <summary>
-        /// Clears the custom loaded types from LuaCaller.RegisterType.
-        /// </summary>
-        public void ClearTypes()
+        /// <inheritdoc cref="Reset"/>
+        public void Reset()
         {
             this.SharedObjects.Clear();
+            LuaMemoryPool.Clear();
+            this.GlobalVariables = new MoonSharpGlobalVariables();
         }
 
         /// <summary>
