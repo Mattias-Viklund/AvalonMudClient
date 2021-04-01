@@ -53,7 +53,7 @@ namespace Avalon.Timers
             {
                 if (task.IsLua)
                 {
-                    await this.Interpreter.LuaCaller.ExecuteAsync(task.Command);
+                    _ = await this.Interpreter.ScriptHost.MoonSharp.ExecuteAsync<object>(task.Command);
                 }
                 else
                 {

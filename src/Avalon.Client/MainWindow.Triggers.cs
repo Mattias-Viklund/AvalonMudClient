@@ -70,7 +70,7 @@ namespace Avalon
                     else if (!string.IsNullOrEmpty(item.Command) && item.IsLua)
                     {
                         // If it has text and it IS lua, send it to the LUA engine.
-                        await Interp.LuaCaller.ExecuteAsync(item.Command);
+                        _ = Interp.ScriptHost.MoonSharp.ExecuteAsync<object>(item.Command);
                     }
 
                     // Check if we're supposed to move this line somewhere else.
@@ -176,7 +176,7 @@ namespace Avalon
                     else if (item.IsLua && !string.IsNullOrWhiteSpace(item.ProcessedCommand))
                     {
                         // If it has text and it IS lua, send it to the LUA engine.
-                        await Interp.LuaCaller.ExecuteAsync(item.ProcessedCommand);
+                        _ = await Interp.ScriptHost.MoonSharp.ExecuteAsync<object>(item.ProcessedCommand);
                     }
 
                     // Check if we're supposed to move this line somewhere else.
@@ -317,11 +317,11 @@ namespace Avalon
                                 //    paramList[i] = match.Groups[i].Value;
                                 //}
 
-                                var luaResult = Interp.LuaCaller.Execute(sb.ToString());
+                                string luaResult = Interp.ScriptHost.MoonSharp.Execute<string>(sb.ToString());
 
-                                if (!luaResult.IsNil())
+                                if (!string.IsNullOrEmpty(luaResult))
                                 {
-                                    sb2.Replace(match.Value, luaResult.String);
+                                    sb2.Replace(match.Value, luaResult);
                                     found = true;
                                 }
                             }

@@ -1899,7 +1899,9 @@ namespace Avalon.Lua
         [Description("The number of Lua scripts that are currently running.")]
         public int LuaScriptsActive()
         {
-            return ((Interpreter)_interpreter).LuaCaller.ActiveLuaScripts;
+            // TODO: Scripting
+            return -1;
+            //return ((Interpreter)_interpreter).LuaCaller.ActiveLuaScripts;
         }
 
         /// <summary>

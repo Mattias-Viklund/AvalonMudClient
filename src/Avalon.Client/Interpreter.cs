@@ -47,8 +47,11 @@ namespace Avalon
                 HashCommands.Add(cmd);
             }
 
-            // Initialize the Lua wrapper we'll make calls from in this class.
-            this.LuaCaller = new LuaCaller(this);
+            // Setup the scripting environment.
+            _random = new Random();
+            _scriptCommands = new ScriptCommands(this, _random);
+            this.ScriptHost = new ScriptHost();
+            this.ScriptHost.RegisterObject<ScriptCommands>(_scriptCommands, "lua");
         }
 
         /// <summary>
@@ -291,11 +294,11 @@ namespace Avalon
                             }
 
                             // This is all that's going to execute as it clears the list.. we can "fire and forget".
-                            this.LuaCaller.ExecuteAsync(sb.ToString());
+                            this.ScriptHost.MoonSharp.ExecuteAsync<object>(sb.ToString());
                         }
                         else
                         {
-                            this.LuaCaller.ExecuteAsync(alias.Command);
+                            this.ScriptHost.MoonSharp.ExecuteAsync<object>(alias.Command);
                         }
 
                         return list;
@@ -582,11 +585,6 @@ namespace Avalon
         public IConveyor Conveyor { get; set; }
 
         /// <summary>
-        /// A class to handle executing Lua scripts.
-        /// </summary>
-        public LuaCaller LuaCaller { get; set; }
-
-        /// <summary>
         /// Whether or not the commands should be recorded into 
         /// </summary>
         public bool IsRecordingCommands { get; set; } = false;
@@ -595,6 +593,22 @@ namespace Avalon
         /// Commands that have been recorded
         /// </summary>
         public List<string> RecordedCommands { get; set; } = new List<string>();
+
+        /// <summary>
+        /// The Scripting host that contains all of our supported scripting environments.
+        /// </summary>
+        public ScriptHost ScriptHost { get; set; }
+
+        /// <summary>
+        /// An interop object that allows scripts to interact with the .NET environment.
+        /// </summary>
+        private static ScriptCommands _scriptCommands;
+
+        /// <summary>
+        /// Single static Random object that will need to be locked between usages.  Calls to _random
+        /// should be locked for thread safety as Random is not thread safe.
+        /// </summary>
+        private static Random _random;
 
     }
 

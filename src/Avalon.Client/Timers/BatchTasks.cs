@@ -47,7 +47,7 @@ namespace Avalon.Timers
                 {
                     await Application.Current.Dispatcher.InvokeAsync(new Action(async () =>
                     {
-                        await this.Interpreter.LuaCaller.ExecuteAsync(task.Command);
+                        _ = await this.Interpreter.ScriptHost.MoonSharp.ExecuteAsync<object>(task.Command);
                     }));
                 }
                 else

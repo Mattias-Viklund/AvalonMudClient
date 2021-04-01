@@ -104,8 +104,8 @@ namespace Avalon.Controls
             // Call our single point of Lua entry.
             try
             {
-                var lua = App.MainWindow.Interp.LuaCaller;
-                _ = lua.ExecuteAsync(Editor.Text);
+                var lua = App.MainWindow.Interp.ScriptHost.MoonSharp;
+                _ = lua.ExecuteAsync<object>(Editor.Text);
             }
             catch (Exception ex)
             {

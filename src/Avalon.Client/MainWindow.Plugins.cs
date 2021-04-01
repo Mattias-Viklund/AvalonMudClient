@@ -178,7 +178,7 @@ namespace Avalon
                             continue;
                         }
 
-                        Interp.LuaCaller.RegisterType(item.Value, item.Key);
+                        Interp.ScriptHost.RegisterObject<ILuaCommand>(item.Value, item.Key);
                     }
 
                     App.Conveyor.EchoLog($"   {plugin.Triggers.Count} Triggers Loaded", LogType.Success);
