@@ -98,7 +98,6 @@ namespace Avalon.Common.Scripting
         /// <inheritdoc cref="Reset"/>
         public void Reset()
         {
-            this.SharedObjects.Clear();
             LuaMemoryPool.Clear();
             this.GlobalVariables = new MoonSharpGlobalVariables();
         }
