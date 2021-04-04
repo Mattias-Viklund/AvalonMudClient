@@ -24,7 +24,7 @@ namespace Avalon.Common.Scripting
         /// <summary>
         /// A memory pool of idle Script objects that can be re-used.
         /// </summary>
-        internal static ObjectPool<Script> LuaMemoryPool { get; set; }
+        public ObjectPool<Script> MemoryPool { get; set; }
 
         /// <summary>
         /// Global variables available to Lua that are shared across all of our Lua sessions.
@@ -46,7 +46,7 @@ namespace Avalon.Common.Scripting
             UserData.RegisterType<MoonSharpGlobalVariables>();
             this.GlobalVariables = new MoonSharpGlobalVariables();
 
-            LuaMemoryPool = new ObjectPool<Script>
+            MemoryPool = new ObjectPool<Script>
             {
                 InitAction = l =>
                 {
@@ -75,9 +75,9 @@ namespace Avalon.Common.Scripting
         {
             // Registering any object forces the memory pool to clear since those objects
             // will need to be loaded
-            if (LuaMemoryPool.Count() > 0)
+            if (MemoryPool.Count() > 0)
             {
-                LuaMemoryPool.Clear();
+                MemoryPool.Clear();
             }
 
             // Only add the type in if it hasn't been added previously.
@@ -98,7 +98,7 @@ namespace Avalon.Common.Scripting
         /// <inheritdoc cref="Reset"/>
         public void Reset()
         {
-            LuaMemoryPool.Clear();
+            MemoryPool.Clear();
             this.GlobalVariables = new MoonSharpGlobalVariables();
         }
 
@@ -120,7 +120,7 @@ namespace Avalon.Common.Scripting
             }
 
             // Gets a new or used but ready instance of the a Lua object to use.
-            var lua = LuaMemoryPool.Get();
+            var lua = MemoryPool.Get();
             DynValue ret;
 
             try
@@ -129,7 +129,7 @@ namespace Avalon.Common.Scripting
             }
             finally
             {
-                LuaMemoryPool.Return(lua);
+                MemoryPool.Return(lua);
             }
 
             return ret.ToObject<T>();
@@ -144,7 +144,7 @@ namespace Avalon.Common.Scripting
             }
 
             // Gets a new or used but ready instance of the a Lua object to use.
-            var lua = LuaMemoryPool.Get();
+            var lua = MemoryPool.Get();
             DynValue ret;
             var executionControlToken = new ExecutionControlToken();
 
@@ -154,7 +154,7 @@ namespace Avalon.Common.Scripting
             }
             finally
             {
-                LuaMemoryPool.Return(lua);
+                MemoryPool.Return(lua);
             }
 
             return ret.ToObject<T>();

@@ -22,7 +22,7 @@ namespace Avalon.Common.Scripting
         /// <summary>
         /// A memory pool of idle Lua objects that can be re-used.
         /// </summary>
-        internal static ObjectPool<NLua.Lua> LuaMemoryPool { get; set; }
+        internal ObjectPool<NLua.Lua> MemoryPool { get; set; }
 
         /// <summary>
         /// A list of shared objects that will be passed to each Lua script.
@@ -34,7 +34,7 @@ namespace Avalon.Common.Scripting
         /// </summary>
         public NLuaEngine()
         {
-            LuaMemoryPool = new ObjectPool<NLua.Lua>
+            MemoryPool = new ObjectPool<NLua.Lua>
             {
                 InitAction = l =>
                 {
@@ -71,7 +71,7 @@ namespace Avalon.Common.Scripting
         public void Reset()
         {
             this.SharedObjects.Clear();
-            LuaMemoryPool.Clear();
+            MemoryPool.Clear();
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace Avalon.Common.Scripting
         /// </summary>
         public void GarbageCollect()
         {
-            LuaMemoryPool.InvokeAll((item) =>
+            MemoryPool.InvokeAll((item) =>
             {
                 if (item.IsExecuting)
                 {
@@ -95,7 +95,7 @@ namespace Avalon.Common.Scripting
         public T Execute<T>(string code)
         {
             // Gets a new or used but ready instance of the a Lua object to use.
-            var lua = LuaMemoryPool.Get();
+            var lua = MemoryPool.Get();
 
             // Execute our code.  Make sure if an exception occurs that the Lua object
             // is returned to the pool.
@@ -109,7 +109,7 @@ namespace Avalon.Common.Scripting
             }
             finally
             {
-                LuaMemoryPool.Return(lua);
+                MemoryPool.Return(lua);
             }
 
             // If a result was returned cast it to T and return it, if not, return the default

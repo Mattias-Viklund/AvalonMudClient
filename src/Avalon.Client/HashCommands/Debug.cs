@@ -20,7 +20,7 @@ namespace Avalon.HashCommands
     {
         public Debug(IInterpreter interp) : base(interp)
         {
-            this.IsAsync = false;
+            this.IsAsync = true;
         }
 
         private DynValue Code { get; set; }
@@ -31,58 +31,23 @@ namespace Avalon.HashCommands
 
         public override async Task ExecuteAsync()
         {
-//            var cmds = new Avalon.Lua.ScriptCommands(this.Interpreter, new Random());
-//            var engine = new NLuaEngine();
-//            engine.SharedObjects.Add("lua", cmds);
-
-//            await engine.ExecuteAsync<object>($@"
-//for i = 1, 10 do
-//    lua:LogInfo(tostring(i))
-//    lua:Pause(1000)
-//end
-//");
-
-            var cmds = new Avalon.Lua.ScriptCommands(this.Interpreter, new Random());
-            var engine = new MoonSharpEngine();
-            engine.RegisterObject<ScriptCommands>(cmds, "lua");
-
-            await engine.ExecuteAsync<object>($@"
-lua:LogInfo(""{{CN{{cLua{{x"")
-for i = 1, 5 do    
-    lua:LogInfo(tostring(i))
-    lua:Pause(1000)
-end
-");
-
-            //var val = await engine.ExecuteAsync<object>("return 25");
-            //this.Interpreter.Conveyor.EchoLog($"{val.ToString()}", LogType.Debug);
-
-            //string buf = await engine.ExecuteAsync<string>("local buf = 'blake' .. ' ' .. 'pell'\nreturn buf");
-            //this.Interpreter.Conveyor.EchoLog($"{buf}", LogType.Debug);
-
-
-            //for (int i = 0; i < 100; i++)
-            //{
-            //    await engine.ExecuteAsync<object>($"lua:LogInfo('{i.ToString()}')\n");
-            //}
-
-            //object ret = engine.Execute("local buf = lua:SetVariable(\"Character\", \"LuaGuy\")\nlocal buf = lua:GetVariable(\"Character\")\nlua:LogInfo(buf)");
+            ((Interpreter)this.Interpreter).ScriptHost.MoonSharp.Reset();
         }
 
         public override void Execute()
         {
-            var cmds = new Avalon.Lua.ScriptCommands(this.Interpreter, new Random());
-            var engine = new NLuaEngine();
-            engine.RegisterObject<ScriptCommands>(cmds, "lua");
+//            var cmds = new Avalon.Lua.ScriptCommands(this.Interpreter, new Random());
+//            var engine = new NLuaEngine();
+//            engine.RegisterObject<ScriptCommands>(cmds, "lua");
             
-            engine.Execute<object>($@"
-lua:LogInfo(""{{GN{{gLua{{x"")
-x
-for i = 1, 5 do
-    lua:LogInfo(tostring(i))
-    lua:Pause(1000)
-end
-");
+//            engine.Execute<object>($@"
+//lua:LogInfo(""{{GN{{gLua{{x"")
+//x
+//for i = 1, 5 do
+//    lua:LogInfo(tostring(i))
+//    lua:Pause(1000)
+//end
+//");
         }
 
         //App.Conveyor.EchoText(sw.ElapsedMilliseconds + "\n", TerminalTarget.Terminal1);
