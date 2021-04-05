@@ -41,7 +41,7 @@ namespace Avalon.HashCommands
 
                     sb.Append("{CM{coon{CS{charp{x {WLua Environment Info:{x\r\n");
                     sb.Append("---------------------------------------------------------------------\r\n");
-                    sb.AppendFormat(" {{G * {{WMemory Pool:{{x                       {{C{0}/{1}{{x\r\n", moonSharp.MemoryPool.Count().ToString(), moonSharp.MemoryPool.Max.ToString());
+                    sb.AppendFormat(" {{G * {{WMemory Pool:{{x                         {{C{0}/{1}{{x\r\n", moonSharp.MemoryPool.Count().ToString(), moonSharp.MemoryPool.Max.ToString());
                     sb.AppendFormat(" {{G * {{WMemory Pool New Objects:{{x             {{C{0}{{x\r\n", moonSharp.MemoryPool.CounterNewObjects.ToString());
                     sb.AppendFormat(" {{G * {{WMemory Pool Reuse Count:{{x             {{C{0}{{x\r\n", moonSharp.MemoryPool.CounterReusedObjects.ToString());
                     sb.AppendFormat(" {{G * {{WGlobal Variable Count:{{x               {{C{0}{{x\r\n", moonSharp.GlobalVariables.Count.ToString());
