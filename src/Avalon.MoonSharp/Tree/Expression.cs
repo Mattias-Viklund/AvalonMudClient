@@ -89,7 +89,7 @@ namespace MoonSharp.Interpreter.Tree
                         t = lcontext.Lexer.Current;
                     }
 
-                    e = powerChain[powerChain.Count - 1];
+                    e = powerChain[^1];
 
                     for (int i = powerChain.Count - 2; i >= 0; i--)
                     {

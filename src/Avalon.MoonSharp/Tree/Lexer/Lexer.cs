@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
+using Cysharp.Text;
 
 namespace MoonSharp.Interpreter.Tree
 {
@@ -192,33 +194,33 @@ namespace MoonSharp.Interpreter.Tree
                     this.CursorCharNext();
                     return this.CreateToken(TokenType.Op_NotEqual, fromLine, fromCol, "~=");
                 case '.':
-                {
-                    char next = this.CursorCharNext();
-                    if (next == '.')
                     {
-                        return this.PotentiallyDoubleCharOperator('.', TokenType.Op_Concat, TokenType.VarArgs, fromLine,
-                            fromCol);
-                    }
+                        char next = this.CursorCharNext();
+                        if (next == '.')
+                        {
+                            return this.PotentiallyDoubleCharOperator('.', TokenType.Op_Concat, TokenType.VarArgs, fromLine,
+                                fromCol);
+                        }
 
-                    if (LexerUtils.CharIsDigit(next))
-                    {
-                        return this.ReadNumberToken(fromLine, fromCol, true);
-                    }
+                        if (LexerUtils.CharIsDigit(next))
+                        {
+                            return this.ReadNumberToken(fromLine, fromCol, true);
+                        }
 
-                    return this.CreateToken(TokenType.Dot, fromLine, fromCol, ".");
-                }
+                        return this.CreateToken(TokenType.Dot, fromLine, fromCol, ".");
+                    }
                 case '+':
                     return this.CreateSingleCharToken(TokenType.Op_Add, fromLine, fromCol);
                 case '-':
-                {
-                    char next = this.CursorCharNext();
-                    if (next == '-')
                     {
-                        return this.ReadComment(fromLine, fromCol);
-                    }
+                        char next = this.CursorCharNext();
+                        if (next == '-')
+                        {
+                            return this.ReadComment(fromLine, fromCol);
+                        }
 
-                    return this.CreateToken(TokenType.Op_MinusOrSub, fromLine, fromCol, "-");
-                }
+                        return this.CreateToken(TokenType.Op_MinusOrSub, fromLine, fromCol, "-");
+                    }
                 case '*':
                     return this.CreateSingleCharToken(TokenType.Op_Mul, fromLine, fromCol);
                 case '/':
@@ -238,16 +240,16 @@ namespace MoonSharp.Interpreter.Tree
 
                     return this.CreateSingleCharToken(TokenType.Op_Len, fromLine, fromCol);
                 case '[':
-                {
-                    char next = this.CursorCharNext();
-                    if (next == '=' || next == '[')
                     {
-                        string str = this.ReadLongString(fromLine, fromCol, null, "string");
-                        return this.CreateToken(TokenType.String_Long, fromLine, fromCol, str);
-                    }
+                        char next = this.CursorCharNext();
+                        if (next == '=' || next == '[')
+                        {
+                            string str = this.ReadLongString(fromLine, fromCol, null, "string");
+                            return this.CreateToken(TokenType.String_Long, fromLine, fromCol, str);
+                        }
 
-                    return this.CreateToken(TokenType.Brk_Open_Square, fromLine, fromCol, "[");
-                }
+                        return this.CreateToken(TokenType.Brk_Open_Square, fromLine, fromCol, "[");
+                    }
                 case ']':
                     return this.CreateSingleCharToken(TokenType.Brk_Close_Square, fromLine, fromCol);
                 case '(':
@@ -273,18 +275,18 @@ namespace MoonSharp.Interpreter.Tree
                         IsPrematureStreamTermination = true
                     };
                 default:
-                {
-                    if (char.IsLetter(c) || c == '_')
                     {
-                        string name = this.ReadNameToken();
-                        return this.CreateNameToken(name, fromLine, fromCol);
-                    }
+                        if (char.IsLetter(c) || c == '_')
+                        {
+                            string name = this.ReadNameToken();
+                            return this.CreateNameToken(name, fromLine, fromCol);
+                        }
 
-                    if (LexerUtils.CharIsDigit(c))
-                    {
-                        return this.ReadNumberToken(fromLine, fromCol, false);
+                        if (LexerUtils.CharIsDigit(c))
+                        {
+                            return this.ReadNumberToken(fromLine, fromCol, false);
+                        }
                     }
-                }
 
                     throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
                         "unexpected symbol near '{0}'", this.CursorChar());
@@ -299,13 +301,13 @@ namespace MoonSharp.Interpreter.Tree
 
             if (startpattern == null)
             {
-                for (char c = this.CursorChar();; c = this.CursorCharNext())
+                for (char c = this.CursorChar(); ; c = this.CursorCharNext())
                 {
                     if (c == '\0' || !this.CursorNotEof())
                     {
                         throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
                                 "unfinished long {0} near '<eof>'", subtypeforerrors)
-                            {IsPrematureStreamTermination = true};
+                        { IsPrematureStreamTermination = true };
                     }
 
                     if (c == '=')
@@ -321,7 +323,7 @@ namespace MoonSharp.Interpreter.Tree
                     {
                         throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
                                 "invalid long {0} delimiter near '{1}'", subtypeforerrors, c)
-                            {IsPrematureStreamTermination = true};
+                        { IsPrematureStreamTermination = true };
                     }
                 }
             }
@@ -331,7 +333,7 @@ namespace MoonSharp.Interpreter.Tree
             }
 
 
-            for (char c = this.CursorCharNext();; c = this.CursorCharNext())
+            for (char c = this.CursorCharNext(); ; c = this.CursorCharNext())
             {
                 if (c == '\r'
                 ) // XXI century and we still debate on how a newline is made. throw new DeveloperExtremelyAngryException.
@@ -343,7 +345,7 @@ namespace MoonSharp.Interpreter.Tree
                 {
                     throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
                             "unfinished long {0} near '{1}'", subtypeforerrors, text.ToString())
-                        {IsPrematureStreamTermination = true};
+                    { IsPrematureStreamTermination = true };
                 }
 
                 if (c == ']' && this.CursorMatches(end_pattern))
@@ -362,8 +364,6 @@ namespace MoonSharp.Interpreter.Tree
 
         private Token ReadNumberToken(int fromLine, int fromCol, bool leadingDot)
         {
-            var text = new StringBuilder(32);
-
             //INT : Digit+
             //HEX : '0' [xX] HexDigit+
             //FLOAT : Digit+ '.' Digit* ExponentPart?
@@ -376,74 +376,76 @@ namespace MoonSharp.Interpreter.Tree
             // ExponentPart : [eE] [+-]? Digit+
             // HexExponentPart : [pP] [+-]? Digit+
 
-            bool isHex = false;
-            bool dotAdded = false;
-            bool exponentPart = false;
-            bool exponentSignAllowed = false;
-
-            if (leadingDot)
+            using (var sb = ZString.CreateStringBuilder())
             {
-                text.Append("0.");
-            }
-            else if (this.CursorChar() == '0')
-            {
-                text.Append(this.CursorChar());
-                char secondChar = this.CursorCharNext();
+                bool isHex = false;
+                bool dotAdded = false;
+                bool exponentPart = false;
+                bool exponentSignAllowed = false;
 
-                if (secondChar == 'x' || secondChar == 'X')
+                if (leadingDot)
                 {
-                    isHex = true;
-                    text.Append(this.CursorChar());
-                    this.CursorCharNext();
+                    sb.Append("0.");
                 }
-            }
+                else if (this.CursorChar() == '0')
+                {
+                    sb.Append(this.CursorChar());
+                    char secondChar = this.CursorCharNext();
 
-            for (char c = this.CursorChar(); this.CursorNotEof(); c = this.CursorCharNext())
-            {
-                if (exponentSignAllowed && (c == '+' || c == '-'))
-                {
-                    exponentSignAllowed = false;
-                    text.Append(c);
+                    if (secondChar == 'x' || secondChar == 'X')
+                    {
+                        isHex = true;
+                        sb.Append(this.CursorChar());
+                        this.CursorCharNext();
+                    }
                 }
-                else if (LexerUtils.CharIsDigit(c))
-                {
-                    text.Append(c);
-                }
-                else if (c == '.' && !dotAdded)
-                {
-                    dotAdded = true;
-                    text.Append(c);
-                }
-                else if (LexerUtils.CharIsHexDigit(c) && isHex && !exponentPart)
-                {
-                    text.Append(c);
-                }
-                else if (c == 'e' || c == 'E' || (isHex && (c == 'p' || c == 'P')))
-                {
-                    text.Append(c);
-                    exponentPart = true;
-                    exponentSignAllowed = true;
-                    dotAdded = true;
-                }
-                else
-                {
-                    break;
-                }
-            }
 
-            var numberType = TokenType.Number;
+                for (char c = this.CursorChar(); this.CursorNotEof(); c = this.CursorCharNext())
+                {
+                    if (exponentSignAllowed && (c == '+' || c == '-'))
+                    {
+                        exponentSignAllowed = false;
+                        sb.Append(c);
+                    }
+                    else if (LexerUtils.CharIsDigit(c))
+                    {
+                        sb.Append(c);
+                    }
+                    else if (c == '.' && !dotAdded)
+                    {
+                        dotAdded = true;
+                        sb.Append(c);
+                    }
+                    else if (LexerUtils.CharIsHexDigit(c) && isHex && !exponentPart)
+                    {
+                        sb.Append(c);
+                    }
+                    else if (c == 'e' || c == 'E' || (isHex && (c == 'p' || c == 'P')))
+                    {
+                        sb.Append(c);
+                        exponentPart = true;
+                        exponentSignAllowed = true;
+                        dotAdded = true;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
 
-            if (isHex && (dotAdded || exponentPart))
-            {
-                numberType = TokenType.Number_HexFloat;
-            }
-            else if (isHex)
-            {
-                numberType = TokenType.Number_Hex;
-            }
+                var numberType = TokenType.Number;
 
-            string tokenStr = text.ToString();
-            return this.CreateToken(numberType, fromLine, fromCol, tokenStr);
+                if (isHex && (dotAdded || exponentPart))
+                {
+                    numberType = TokenType.Number_HexFloat;
+                }
+                else if (isHex)
+                {
+                    numberType = TokenType.Number_Hex;
+                }
+
+                return this.CreateToken(numberType, fromLine, fromCol, sb.ToString());
+            }
         }
 
         private Token CreateSingleCharToken(TokenType tokenType, int fromLine, int fromCol)
@@ -477,101 +479,104 @@ namespace MoonSharp.Interpreter.Tree
 
         private Token ReadComment(int fromLine, int fromCol)
         {
-            var text = new StringBuilder(32);
-
-            bool extraneousFound = false;
-
-            for (char c = this.CursorCharNext(); this.CursorNotEof(); c = this.CursorCharNext())
+            using (var sb = ZString.CreateStringBuilder())
             {
-                if (c == '[' && !extraneousFound && text.Length > 0)
-                {
-                    text.Append('[');
-                    string comment = this.ReadLongString(fromLine, fromCol, text.ToString(), "comment");
-                    return this.CreateToken(TokenType.Comment, fromLine, fromCol, comment);
-                }
+                bool extraneousFound = false;
 
-                if (c == '\n')
+                for (char c = this.CursorCharNext(); this.CursorNotEof(); c = this.CursorCharNext())
                 {
-                    this.CursorCharNext();
-                    return this.CreateToken(TokenType.Comment, fromLine, fromCol, text.ToString());
-                }
-
-                if (c != '\r')
-                {
-                    if (c != '[' && c != '=')
+                    if (c == '[' && !extraneousFound && sb.Length > 0)
                     {
-                        extraneousFound = true;
+                        sb.Append('[');
+                        string comment = this.ReadLongString(fromLine, fromCol, sb.ToString(), "comment");
+                        return this.CreateToken(TokenType.Comment, fromLine, fromCol, comment);
                     }
 
-                    text.Append(c);
-                }
-            }
+                    if (c == '\n')
+                    {
+                        this.CursorCharNext();
+                        return this.CreateToken(TokenType.Comment, fromLine, fromCol, sb.ToString());
+                    }
 
-            return this.CreateToken(TokenType.Comment, fromLine, fromCol, text.ToString());
+                    if (c != '\r')
+                    {
+                        if (c != '[' && c != '=')
+                        {
+                            extraneousFound = true;
+                        }
+
+                        sb.Append(c);
+                    }
+                }
+
+                return this.CreateToken(TokenType.Comment, fromLine, fromCol, sb.ToString());
+            }
         }
 
         private Token ReadSimpleStringToken(int fromLine, int fromCol)
         {
-            var text = new StringBuilder(32);
-            char separator = this.CursorChar();
-
-            for (char c = this.CursorCharNext(); this.CursorNotEof(); c = this.CursorCharNext())
+            using (var sb = ZString.CreateStringBuilder())
             {
+                char separator = this.CursorChar();
+
+                for (char c = this.CursorCharNext(); this.CursorNotEof(); c = this.CursorCharNext())
+                {
                 redo_Loop:
 
-                if (c == '\\')
-                {
-                    text.Append(c);
-                    c = this.CursorCharNext();
-                    text.Append(c);
-
-                    if (c == '\r')
+                    if (c == '\\')
                     {
+                        sb.Append(c);
                         c = this.CursorCharNext();
-                        if (c == '\n')
+                        sb.Append(c);
+
+                        if (c == '\r')
                         {
-                            text.Append(c);
+                            c = this.CursorCharNext();
+                            if (c == '\n')
+                            {
+                                sb.Append(c);
+                            }
+                            else
+                            {
+                                goto redo_Loop;
+                            }
                         }
-                        else
+                        else if (c == 'z')
                         {
+                            c = this.CursorCharNext();
+
+                            if (char.IsWhiteSpace(c))
+                            {
+                                this.SkipWhiteSpace();
+                            }
+
+                            c = this.CursorChar();
+
                             goto redo_Loop;
                         }
                     }
-                    else if (c == 'z')
+                    else if (c == '\n' || c == '\r')
                     {
-                        c = this.CursorCharNext();
-
-                        if (char.IsWhiteSpace(c))
-                        {
-                            this.SkipWhiteSpace();
-                        }
-
-                        c = this.CursorChar();
-
-                        goto redo_Loop;
+                        throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
+                            "unfinished string near '{0}'", sb.ToString());
+                    }
+                    else if (c == separator)
+                    {
+                        this.CursorCharNext();
+                        var t = this.CreateToken(TokenType.String, fromLine, fromCol);
+                        t.Text = LexerUtils.UnescapeLuaString(t, sb.ToString());
+                        return t;
+                    }
+                    else
+                    {
+                        sb.Append(c);
                     }
                 }
-                else if (c == '\n' || c == '\r')
-                {
-                    throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
-                        "unfinished string near '{0}'", text.ToString());
-                }
-                else if (c == separator)
-                {
-                    this.CursorCharNext();
-                    var t = this.CreateToken(TokenType.String, fromLine, fromCol);
-                    t.Text = LexerUtils.UnescapeLuaString(t, text.ToString());
-                    return t;
-                }
-                else
-                {
-                    text.Append(c);
-                }
-            }
 
-            throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
-                    "unfinished string near '{0}'", text.ToString())
-                {IsPrematureStreamTermination = true};
+                throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
+                        "unfinished string near '{0}'", sb.ToString())
+                { IsPrematureStreamTermination = true };
+            }
         }
 
 
@@ -618,21 +623,22 @@ namespace MoonSharp.Interpreter.Tree
 
         private string ReadNameToken()
         {
-            var name = new StringBuilder(32);
-
-            for (char c = this.CursorChar(); this.CursorNotEof(); c = this.CursorCharNext())
+            using (var sb = ZString.CreateStringBuilder())
             {
-                if (char.IsLetterOrDigit(c) || c == '_')
+                for (char c = this.CursorChar(); this.CursorNotEof(); c = this.CursorCharNext())
                 {
-                    name.Append(c);
+                    if (char.IsLetterOrDigit(c) || c == '_')
+                    {
+                        sb.Append(c);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                else
-                {
-                    break;
-                }
-            }
 
-            return name.ToString();
+                return sb.ToString();
+            }
         }
     }
 }

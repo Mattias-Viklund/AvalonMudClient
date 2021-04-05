@@ -282,19 +282,22 @@ namespace Avalon
                         // the replacements if the string contains a percent sign.
                         if (alias.Command.Contains("%", StringComparison.Ordinal))
                         {
-                            var sb = new StringBuilder(alias.Command);
-
-                            // %0 will represent the entire matched string.
-                            sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
-
-                            // %1-%9
-                            for (int i = 1; i <= 9; i++)
+                            using (var sb = ZString.CreateStringBuilder())
                             {
-                                sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
-                            }
+                                sb.Append(alias.Command);
 
-                            // This is all that's going to execute as it clears the list.. we can "fire and forget".
-                            this.ScriptHost.MoonSharp.ExecuteAsync<object>(sb.ToString());
+                                // %0 will represent the entire matched string.
+                                sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
+
+                                // %1-%9
+                                for (int i = 1; i <= 9; i++)
+                                {
+                                    sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
+                                }
+
+                                // This is all that's going to execute as it clears the list.. we can "fire and forget".
+                                this.ScriptHost.MoonSharp.ExecuteAsync<object>(sb.ToString());
+                            }
                         }
                         else
                         {

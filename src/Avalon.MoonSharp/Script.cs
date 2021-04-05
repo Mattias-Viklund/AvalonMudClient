@@ -198,9 +198,7 @@ namespace MoonSharp.Interpreter
                 }
             }
 
-            string chunkName = $"{codeFriendlyName ?? $"chunk_{_sources.Count.ToString()}"}";
-
-            var source = new SourceCode(codeFriendlyName ?? chunkName, code, _sources.Count, this);
+            var source = new SourceCode(codeFriendlyName ?? $"chunk_{_sources.Count.ToString()}", code, _sources.Count, this);
 
             _sources.Add(source);
 

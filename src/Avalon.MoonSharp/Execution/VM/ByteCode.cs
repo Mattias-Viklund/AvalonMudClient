@@ -1,12 +1,11 @@
 ﻿#define EMIT_DEBUG_OPS
 
+using Cysharp.Text;
+using MoonSharp.Interpreter.Debugging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using Cysharp.Text;
-using MoonSharp.Interpreter.Debugging;
 
 namespace MoonSharp.Interpreter.Execution.VM
 {
