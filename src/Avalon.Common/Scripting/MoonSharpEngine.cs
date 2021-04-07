@@ -67,6 +67,8 @@ namespace Avalon.Common.Scripting
                 {
                 }
             };
+
+            Script.WarmUp();
         }
 
         /// <inheritdoc cref="RegisterObject{T}"/>
@@ -121,7 +123,7 @@ namespace Avalon.Common.Scripting
             // Gets a new or used but ready instance of the a Lua object to use.
             var lua = MemoryPool.Get();
             DynValue ret;
-
+            
             try
             {
                 ret = lua.DoString(code);
@@ -189,7 +191,7 @@ namespace Avalon.Common.Scripting
 
             DynValue ret;
             var executionControlToken = new ExecutionControlToken();
-
+            
             try
             {
                 ret = await lua.CallAsync(executionControlToken, fnc, args);
