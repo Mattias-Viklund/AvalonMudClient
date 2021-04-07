@@ -67,7 +67,6 @@ namespace Avalon.Common.Scripting
                 {
                 }
             };
-
         }
 
         /// <inheritdoc cref="RegisterObject{T}"/>
@@ -151,6 +150,91 @@ namespace Avalon.Common.Scripting
             try
             {
                 ret = await lua.DoStringAsync(executionControlToken, code);
+            }
+            finally
+            {
+                MemoryPool.Return(lua);
+            }
+
+            return ret.ToObject<T>();
+        }
+
+        /// <summary>
+        /// Executes a function.  If the function isn't stored a copy will be loaded.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="functionName">The name of the function to call.</param>
+        /// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
+        /// <param name="args">Any param arguments to pass to the function.</param>
+        public async Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args)
+        {
+            // Gets a new or used but ready instance of the a Lua object to use.
+            var lua = MemoryPool.Get();
+
+            // See if the function exists, if it doesn't, we will load it based off of the code provided.
+            DynValue fnc = lua.Globals.Get(functionName);
+
+            // If the function doesn't exist report the error and get out.  The caller should have
+            // loaded the function already.
+            if (fnc.IsNil())
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return DynValue.Nil.ToObject<T>();
+                }
+
+                _ = lua.DoString(code, codeFriendlyName: functionName);
+                fnc = lua.Globals.Get(functionName);
+            }
+
+            DynValue ret;
+            var executionControlToken = new ExecutionControlToken();
+
+            try
+            {
+                ret = await lua.CallAsync(executionControlToken, fnc, args);
+            }
+            finally
+            {
+                MemoryPool.Return(lua);
+            }
+
+            return ret.ToObject<T>();
+        }
+
+        /// <summary>
+        /// Executes a function.  If the function isn't stored a copy will be loaded.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="functionName">The name of the function to call.</param>
+        /// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
+        /// <param name="args">Any param arguments to pass to the function.</param>
+        public T ExecuteFunction<T>(string functionName, string code, params string[] args)
+        {
+            // Gets a new or used but ready instance of the a Lua object to use.
+            var lua = MemoryPool.Get();
+
+            // See if the function exists, if it doesn't, we will load it based off of the code provided.
+            DynValue fnc = lua.Globals.Get(functionName);
+
+            // If the function doesn't exist report the error and get out.  The caller should have
+            // loaded the function already.
+            if (fnc.IsNil())
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return DynValue.Nil.ToObject<T>();
+                }
+
+                _ = lua.DoString(code, codeFriendlyName: functionName);
+                fnc = lua.Globals.Get(functionName);
+            }
+
+            DynValue ret;
+
+            try
+            {
+                ret = lua.Call(fnc, args);
             }
             finally
             {
