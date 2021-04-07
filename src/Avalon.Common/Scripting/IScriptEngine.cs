@@ -7,6 +7,7 @@
  * @license           : MIT
  */
 
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -37,7 +38,6 @@ namespace Avalon.Common.Scripting
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="code"></param>
-        /// <returns></returns>
         T Execute<T>(string code);
 
         /// <summary>
@@ -45,8 +45,25 @@ namespace Avalon.Common.Scripting
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="code"></param>
-        /// <returns></returns>
         Task<T> ExecuteAsync<T>(string code);
+
+        /// <summary>
+        /// Executes a function.  If the function isn't stored a copy will be loaded.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="functionName"></param>
+        /// <param name="code"></param>
+        /// <param name="args"></param>
+        Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args);
+
+        /// <summary>
+        /// Executes a function.  If the function isn't stored a copy will be loaded.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="functionName"></param>
+        /// <param name="code"></param>
+        /// <param name="args"></param>
+        T ExecuteFunction<T>(string functionName, string code, params string[] args);
 
         /// <summary>
         /// Executes the scripting languages garbage collecting feature if it exists.  As an
@@ -60,5 +77,13 @@ namespace Avalon.Common.Scripting
         /// shared objects are used those are also discarded.
         /// </summary>
         void Reset();
+
+        /// <summary>
+        /// An exception handler that should be run when an exception occurs anywhere in the
+        /// script engine.  This allows for ease of use in exception handling when a fire and
+        /// forget async call is made.
+        /// </summary>
+        Action<Exception> ExceptionHandler { get; set; }
+
     }
 }

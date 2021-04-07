@@ -36,6 +36,9 @@ namespace Avalon.Common.Scripting
         /// </summary>
         public Dictionary<string, object> SharedObjects { get; set; } = new();
 
+        /// <inheritdoc cref="ExceptionHandler"/>
+        public Action<Exception> ExceptionHandler { get; set; }
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -123,10 +126,15 @@ namespace Avalon.Common.Scripting
             // Gets a new or used but ready instance of the a Lua object to use.
             var lua = MemoryPool.Get();
             DynValue ret;
-            
+
             try
             {
                 ret = lua.DoString(code);
+            }
+            catch (Exception ex)
+            {
+                this?.ExceptionHandler(ex);
+                throw;
             }
             finally
             {
@@ -152,6 +160,11 @@ namespace Avalon.Common.Scripting
             try
             {
                 ret = await lua.DoStringAsync(executionControlToken, code);
+            }
+            catch (Exception ex)
+            {
+                this?.ExceptionHandler(ex);
+                throw;
             }
             finally
             {
@@ -196,6 +209,11 @@ namespace Avalon.Common.Scripting
             {
                 ret = await lua.CallAsync(executionControlToken, fnc, args);
             }
+            catch (Exception ex)
+            {
+                this?.ExceptionHandler(ex);
+                throw;
+            }
             finally
             {
                 MemoryPool.Return(lua);
@@ -237,6 +255,11 @@ namespace Avalon.Common.Scripting
             try
             {
                 ret = lua.Call(fnc, args);
+            }
+            catch (Exception ex)
+            {
+                this?.ExceptionHandler(ex);
+                throw;
             }
             finally
             {

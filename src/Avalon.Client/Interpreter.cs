@@ -22,6 +22,7 @@ using Avalon.Colors;
 using System.Text;
 using Avalon.Common.Scripting;
 using Cysharp.Text;
+using MoonSharp.Interpreter;
 
 namespace Avalon
 {
@@ -47,11 +48,39 @@ namespace Avalon
                 HashCommands.Add(cmd);
             }
 
-            // Setup the scripting environment.
+            // Setup the scripting environment.  Error handlers are set here allowing the actual scripting
+            // environment to stay generic while the client worries about the implementation details.
             _random = new Random();
             _scriptCommands = new ScriptCommands(this, _random);
             this.ScriptHost = new ScriptHost();
             this.ScriptHost.RegisterObject<ScriptCommands>(_scriptCommands, "lua");
+
+            this.ScriptHost.MoonSharp.ExceptionHandler = (ex) =>
+            {
+                this.Conveyor.EchoError($"Lua Exception: {ex.Message}");
+
+                if (ex.InnerException is InterpreterException innerEx)
+                {
+                    this.Conveyor.EchoError($"Lua Inner Exception: {innerEx?.DecoratedMessage}");
+                }
+                else
+                {
+                    this.Conveyor.EchoError($"Lua Inner Exception: {ex.InnerException?.Message ?? "null message"}");
+                }
+            };
+
+            this.ScriptHost.NLua.ExceptionHandler = (ex) =>
+            {
+                if (ex is NLua.Exceptions.LuaException exLua)
+                {
+                    this.Conveyor.EchoError($"NLua Inner Exception: {ex.Message}");
+                    this.Conveyor.EchoError($"NLua Stack Trace: {ex.StackTrace}");
+                }
+                else
+                {
+                    this.Conveyor.EchoError($"NLua Exception: {ex.Message}");
+                }
+            };
         }
 
         /// <summary>

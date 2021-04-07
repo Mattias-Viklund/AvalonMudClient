@@ -29,6 +29,9 @@ namespace Avalon.Common.Scripting
         /// </summary>
         public Dictionary<string, object> SharedObjects { get; set; } = new();
 
+        /// <inheritdoc cref="ExceptionHandler"/>
+        public Action<Exception> ExceptionHandler { get; set; }
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -107,6 +110,11 @@ namespace Avalon.Common.Scripting
             {
                 ret = lua.DoString(code);
             }
+            catch (Exception ex)
+            {
+                this?.ExceptionHandler(ex);
+                throw;
+            }
             finally
             {
                 MemoryPool.Return(lua);
@@ -126,6 +134,18 @@ namespace Avalon.Common.Scripting
         public Task<T> ExecuteAsync<T>(string code)
         {
             return Task.Run(() => this.Execute<T>(code));
+        }
+
+        /// <inheritdoc cref="ExecuteFunctionAsync{T}"/>
+        public Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc cref="ExecuteFunction{T}"/>
+        public T ExecuteFunction<T>(string functionName, string code, params string[] args)
+        {
+            throw new NotImplementedException();
         }
     }
 }
