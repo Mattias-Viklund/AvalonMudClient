@@ -65,7 +65,7 @@ namespace Avalon.Common.Scripting
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
         /// <param name="prefix"></param>
-        public void RegisterObject<T>(object item, string prefix)
+        public void RegisterObject<T>(Type t, object item, string prefix)
         {
             this.SharedObjects.Add(prefix, item);
         }

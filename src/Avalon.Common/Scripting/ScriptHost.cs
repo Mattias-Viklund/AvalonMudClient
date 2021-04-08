@@ -7,6 +7,8 @@
  * @license           : MIT
  */
 
+using System;
+
 namespace Avalon.Common.Scripting
 {
     /// <summary>
@@ -59,10 +61,10 @@ namespace Avalon.Common.Scripting
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
         /// <param name="prefix"></param>
-        public void RegisterObject<T>(object item, string prefix)
+        public void RegisterObject<T>(Type t, object item, string prefix)
         {
-            MoonSharp?.RegisterObject<T>(item, prefix);
-            NLua?.RegisterObject<T>(item, prefix);
+            MoonSharp?.RegisterObject<T>(t, item, prefix);
+            NLua?.RegisterObject<T>(t, item, prefix);
         }
 
         /// <summary>

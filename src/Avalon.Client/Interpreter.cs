@@ -53,7 +53,7 @@ namespace Avalon
             _random = new Random();
             _scriptCommands = new ScriptCommands(this, _random);
             this.ScriptHost = new ScriptHost();
-            this.ScriptHost.RegisterObject<ScriptCommands>(_scriptCommands, "lua");
+            this.ScriptHost.RegisterObject<ScriptCommands>(_scriptCommands.GetType(), _scriptCommands, "lua");
 
             this.ScriptHost.MoonSharp.ExceptionHandler = (ex) =>
             {

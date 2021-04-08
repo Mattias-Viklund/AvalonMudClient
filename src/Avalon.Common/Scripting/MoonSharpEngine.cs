@@ -75,7 +75,7 @@ namespace Avalon.Common.Scripting
         }
 
         /// <inheritdoc cref="RegisterObject{T}"/>
-        public void RegisterObject<T>(object item, string prefix)
+        public void RegisterObject<T>(Type t, object item, string prefix)
         {
             // Registering any object forces the memory pool to clear since those objects
             // will need to be loaded
@@ -91,9 +91,9 @@ namespace Avalon.Common.Scripting
             }
 
             // Register the type if it's not already registered.
-            if (!UserData.IsTypeRegistered<T>())
+            if (!UserData.IsTypeRegistered(t))
             {
-                UserData.RegisterType<T>();
+                UserData.RegisterType(t);
             }
 
             this.SharedObjects.Add(prefix, UserData.Create(item));
