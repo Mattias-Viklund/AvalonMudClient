@@ -11,9 +11,9 @@ namespace MoonSharp.Interpreter.Execution.VM
                 return System.Array.Empty<DynValue>();
             }
 
-            if (values[values.Count - 1].Type == DataType.Tuple)
+            if (values[^1].Type == DataType.Tuple)
             {
-                int baseLen = values.Count - 1 + values[values.Count - 1].Tuple.Length;
+                int baseLen = values.Count - 1 + values[^1].Tuple.Length;
                 var result = new DynValue[baseLen];
 
                 for (int i = 0; i < values.Count - 1; i++)
@@ -21,12 +21,12 @@ namespace MoonSharp.Interpreter.Execution.VM
                     result[i] = values[i].ToScalar();
                 }
 
-                for (int i = 0; i < values[values.Count - 1].Tuple.Length; i++)
+                for (int i = 0; i < values[^1].Tuple.Length; i++)
                 {
-                    result[values.Count + i - 1] = values[values.Count - 1].Tuple[i];
+                    result[values.Count + i - 1] = values[^1].Tuple[i];
                 }
 
-                if (result[result.Length - 1].Type == DataType.Tuple)
+                if (result[^1].Type == DataType.Tuple)
                 {
                     return this.Internal_AdjustTuple(result);
                 }
@@ -97,51 +97,6 @@ namespace MoonSharp.Interpreter.Execution.VM
             }
 
             return -1;
-        }
-
-
-        private DynValue[] StackTopToArray(int items, bool pop)
-        {
-            var values = new DynValue[items];
-
-            if (pop)
-            {
-                for (int i = 0; i < items; i++)
-                {
-                    values[i] = _valueStack.Pop();
-                }
-            }
-            else
-            {
-                for (int i = 0; i < items; i++)
-                {
-                    values[i] = _valueStack[_valueStack.Count - 1 - i];
-                }
-            }
-
-            return values;
-        }
-
-        private DynValue[] StackTopToArrayReverse(int items, bool pop)
-        {
-            var values = new DynValue[items];
-
-            if (pop)
-            {
-                for (int i = 0; i < items; i++)
-                {
-                    values[items - 1 - i] = _valueStack.Pop();
-                }
-            }
-            else
-            {
-                for (int i = 0; i < items; i++)
-                {
-                    values[items - 1 - i] = _valueStack[_valueStack.Count - 1 - i];
-                }
-            }
-
-            return values;
         }
     }
 }

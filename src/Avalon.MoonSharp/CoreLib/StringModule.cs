@@ -16,40 +16,12 @@ namespace MoonSharp.Interpreter.CoreLib
     [MoonSharpModule(Namespace = "string")]
     public class StringModule
     {
-        public const string BASE64_DUMP_HEADER = "MoonSharp_dump_b64::";
-
         public static void MoonSharpInit(Table globalTable, Table stringTable)
         {
             var stringMetatable = new Table(globalTable.OwnerScript);
             stringMetatable.Set("__index", DynValue.NewTable(stringTable));
             globalTable.OwnerScript.SetTypeMetatable(DataType.String, stringMetatable);
         }
-
-
-        [MoonSharpModuleMethod]
-        public static DynValue dump(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            var fn = args.AsType(0, "dump", DataType.Function);
-
-            try
-            {
-                byte[] bytes;
-                using (var ms = new MemoryStream())
-                {
-                    executionContext.GetScript().Dump(fn, ms);
-                    ms.Seek(0, SeekOrigin.Begin);
-                    bytes = ms.ToArray();
-                }
-
-                string base64 = Convert.ToBase64String(bytes);
-                return DynValue.NewString(BASE64_DUMP_HEADER + base64);
-            }
-            catch (Exception ex)
-            {
-                throw new ScriptRuntimeException(ex.Message);
-            }
-        }
-
 
         [MoonSharpModuleMethod]
         public static DynValue @char(ScriptExecutionContext executionContext, CallbackArguments args)

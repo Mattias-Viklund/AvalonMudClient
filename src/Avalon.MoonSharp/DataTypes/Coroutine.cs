@@ -348,21 +348,5 @@ namespace MoonSharp.Interpreter
         {
             return Task.Factory.StartNew(() => this.Resume(context, args));
         }
-
-        /// <summary>
-        /// Gets the coroutine stack trace for debug purposes
-        /// </summary>
-        /// <param name="skip">The skip.</param>
-        /// <param name="entrySourceRef">The entry source reference.</param>
-        public WatchItem[] GetStackTrace(int skip, SourceRef entrySourceRef = null)
-        {
-            if (this.State != CoroutineState.Running)
-            {
-                entrySourceRef = _processor.GetCoroutineSuspendedLocation();
-            }
-
-            var stack = _processor.Debugger_GetCallStack(entrySourceRef);
-            return stack.Skip(skip).ToArray();
-        }
     }
 }

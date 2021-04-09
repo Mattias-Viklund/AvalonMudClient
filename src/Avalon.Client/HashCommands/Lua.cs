@@ -26,8 +26,8 @@ namespace Avalon.HashCommands
         public override async Task ExecuteAsync()
         {
             // Call our single point of Lua entry.
-            var lua = ((Interpreter)this.Interpreter).LuaCaller;
-            await lua.ExecuteAsync(Parameters);
+            var lua = ((Interpreter)this.Interpreter).ScriptHost.MoonSharp;
+            _ = await lua.ExecuteAsync<object>(Parameters);
         }
     }
 }

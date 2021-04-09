@@ -162,6 +162,19 @@ namespace Avalon.Common.Triggers
             }
         }
 
+        private ExecuteType _executeType = ExecuteType.Command;
+
+        /// <inheritdoc/>
+        public ExecuteType ExecuteAs
+        {
+            get => _executeType;
+            set
+            {
+                _executeType = value;
+                OnPropertyChanged(nameof(ExecuteAs));
+            }
+        }
+
         /// <inheritdoc />
         [JsonIgnore]
         public Regex Regex { get; set; }

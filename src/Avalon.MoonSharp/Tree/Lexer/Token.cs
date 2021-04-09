@@ -6,13 +6,11 @@ namespace MoonSharp.Interpreter.Tree
     internal class Token
     {
         public readonly int FromCol, ToCol, FromLine, ToLine, PrevCol, PrevLine;
-        public readonly int SourceId;
         public readonly TokenType Type;
 
-        public Token(TokenType type, int sourceId, int fromLine, int fromCol, int toLine, int toCol, int prevLine, int prevCol)
+        public Token(TokenType type, int fromLine, int fromCol, int toLine, int toCol, int prevLine, int prevCol)
         {
             Type = type;
-            SourceId = sourceId;
             FromLine = fromLine;
             FromCol = fromCol;
             ToCol = toCol;
@@ -155,17 +153,17 @@ namespace MoonSharp.Interpreter.Tree
 
         internal SourceRef GetSourceRef(bool isStepStop = true)
         {
-            return new SourceRef(SourceId, FromCol, ToCol, FromLine, ToLine, isStepStop);
+            return new SourceRef(FromCol, ToCol, FromLine, ToLine, isStepStop);
         }
 
         internal SourceRef GetSourceRef(Token to, bool isStepStop = true)
         {
-            return new SourceRef(SourceId, FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
+            return new SourceRef(FromCol, to.ToCol, FromLine, to.ToLine, isStepStop);
         }
 
         internal SourceRef GetSourceRefUpTo(Token to, bool isStepStop = true)
         {
-            return new SourceRef(SourceId, FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
+            return new SourceRef(FromCol, to.PrevCol, FromLine, to.PrevLine, isStepStop);
         }
     }
 }

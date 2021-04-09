@@ -1222,7 +1222,7 @@ namespace Avalon
                 };
 
                 // Set the initial type for highlighting.
-                if (alias.IsLua)
+                if (alias.ExecuteAs == ExecuteType.LuaMoonsharp || alias.ExecuteAs == ExecuteType.LuaNLua)
                 {
                     win.EditorMode = StringEditor.EditorType.Lua;
                 }

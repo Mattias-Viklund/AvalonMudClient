@@ -2,11 +2,6 @@
 
 #pragma warning disable 1591
 
-using System;
-using System.Text;
-using Cysharp.Text;
-using MoonSharp.Interpreter.REPL;
-
 namespace MoonSharp.Interpreter.CoreLib
 {
     /// <summary>
@@ -15,46 +10,6 @@ namespace MoonSharp.Interpreter.CoreLib
     [MoonSharpModule(Namespace = "debug")]
     public class DebugModule
     {
-        [MoonSharpModuleMethod]
-        public static DynValue debug(ScriptExecutionContext executionContext, CallbackArguments args)
-        {
-            var script = executionContext.GetScript();
-
-            if (script.Options.DebugInput == null)
-            {
-                throw new ScriptRuntimeException("debug.debug not supported on this platform/configuration");
-            }
-
-            var interpreter = new ReplInterpreter(script)
-            {
-                HandleDynamicExprs = false,
-                HandleClassicExprsSyntax = true
-            };
-
-            while (true)
-            {
-                string s = script.Options.DebugInput(interpreter.ClassicPrompt + " ");
-
-                try
-                {
-                    var result = interpreter.Evaluate(s);
-
-                    if (result != null && result.Type != DataType.Void)
-                    {
-                        script.Options.DebugPrint(string.Format("{0}", result));
-                    }
-                }
-                catch (InterpreterException ex)
-                {
-                    script.Options.DebugPrint(string.Format("{0}", ex.DecoratedMessage ?? ex.Message));
-                }
-                catch (Exception ex)
-                {
-                    script.Options.DebugPrint(string.Format("{0}", ex.Message));
-                }
-            }
-        }
-
         [MoonSharpModuleMethod]
         public static DynValue getuservalue(ScriptExecutionContext executionContext, CallbackArguments args)
         {
@@ -229,8 +184,6 @@ namespace MoonSharp.Interpreter.CoreLib
         [MoonSharpModuleMethod]
         public static DynValue traceback(ScriptExecutionContext executionContext, CallbackArguments args)
         {
-            using (var sb = ZString.CreateStringBuilder())
-            {
                 var vMessage = args[0];
                 var vLevel = args[1];
 
@@ -255,34 +208,7 @@ namespace MoonSharp.Interpreter.CoreLib
 
                 int skip = (int)((vLevel.CastToNumber()) ?? defaultSkip);
 
-                var stacktrace = cor.GetStackTrace(Math.Max(0, skip));
-
-                if (message != null)
-                {
-                    sb.AppendLine(message);
-                }
-
-                sb.AppendLine("stack traceback:");
-
-                foreach (var wi in stacktrace)
-                {
-                    string name;
-
-                    if (wi.Name == null)
-                    {
-                        name = wi.RetAddress < 0 ? "main chunk" : "?";
-                    }
-                    else
-                    {
-                        name = $"function '{wi.Name}'";
-                    }
-
-                    string loc = wi.Location != null ? wi.Location.FormatLocation(executionContext.GetScript()) : "[clr]";
-                    sb.AppendFormat("\t{0}: in {1}\n", loc, name);
-                }
-
-                return DynValue.NewString(sb.ToString());
-            }
+                return DynValue.NewString(message ?? "");
         }
     }
 }

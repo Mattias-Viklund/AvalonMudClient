@@ -141,7 +141,7 @@ namespace MoonSharp.Interpreter.Serialization.Json
         /// <returns>A table containing the representation of the given json.</returns>
         public static Table JsonToTable(string json, Script script = null)
         {
-            var L = new Lexer(0, json, false);
+            var L = new Lexer(json, false);
 
             if (L.Current.Type == TokenType.Brk_Open_Curly)
             {

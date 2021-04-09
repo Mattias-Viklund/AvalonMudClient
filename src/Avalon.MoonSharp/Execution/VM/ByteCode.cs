@@ -1,30 +1,38 @@
-﻿#define EMIT_DEBUG_OPS
-
+﻿using MoonSharp.Interpreter.Debugging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
-using Cysharp.Text;
-using MoonSharp.Interpreter.Debugging;
 
 namespace MoonSharp.Interpreter.Execution.VM
 {
     internal class ByteCode : RefIdObject
     {
-        public List<Instruction> Code = new List<Instruction>();
-
-        internal LoopTracker LoopTracker = new LoopTracker();
+        public List<Instruction> Code = new();
+        internal LoopTracker LoopTracker = new();
         private SourceRef _currentSourceRef;
-        private List<SourceRef> _sourceRefStack = new List<SourceRef>();
+        private List<SourceRef> _sourceRefStack = new();
 
         public ByteCode(Script script)
         {
             this.Script = script;
         }
 
+        /// <summary>
+        /// Resets the list of instructions that have been loaded into this instance of MoonSharp.  This
+        /// will in effect negate being able to call loaded functions (e.g. they will have to be reloaded)
+        /// but if lots of unused code has been loaded it will allow the program to reclaim the memory
+        /// instead of effectively leaking it.  Use caution with this method.
+        /// </summary>
+        public void Reset()
+        {
+            this.Code.Clear();
+        }
+
         public Script Script { get; }
 
+        /// <summary>
+        /// Returns the number of instructions held by this <see cref="ByteCode"/> class.
+        /// </summary>
+        public int InstructionCount => this.Code.Count;
 
         public IDisposable EnterSource(SourceRef sref)
         {
@@ -42,27 +50,6 @@ namespace MoonSharp.Interpreter.Execution.VM
         {
             _sourceRefStack.RemoveAt(_sourceRefStack.Count - 1);
             _currentSourceRef = (_sourceRefStack.Count > 0) ? _sourceRefStack[^1] : null;
-        }
-
-        public void Dump(string file)
-        {
-            using (var sb = ZString.CreateStringBuilder())
-            {
-                for (int i = 0; i < Code.Count; i++)
-                {
-                    if (Code[i].OpCode == OpCode.Debug)
-                    {
-                        sb.AppendFormat("    {0}\n", Code[i]);
-                    }
-                    else
-                    {
-                        sb.AppendFormat("{0:X8}  {1}\n", i, Code[i]);
-                    }
-                }
-
-                File.WriteAllText(file, sb.ToString());
-            }
-
         }
 
         public int GetJumpPointForNextInstruction()
@@ -144,14 +131,6 @@ namespace MoonSharp.Interpreter.Execution.VM
             }
 
             return i;
-        }
-
-
-        [Conditional("EMIT_DEBUG_OPS")]
-        public void Emit_Debug(string str)
-        {
-            this.AppendInstruction(new Instruction(_currentSourceRef)
-                {OpCode = OpCode.Debug, Name = str.Substring(0, Math.Min(32, str.Length))});
         }
 
         public Instruction Emit_Enter(RuntimeScopeBlock runtimeScopeBlock)

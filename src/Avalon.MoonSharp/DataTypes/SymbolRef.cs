@@ -35,7 +35,6 @@ namespace MoonSharp.Interpreter
         /// </summary>
         public SymbolRef Environment => _env;
 
-
         /// <summary>
         /// Gets the default _ENV.
         /// </summary>
@@ -92,50 +91,6 @@ namespace MoonSharp.Interpreter
             }
 
             return string.Format("{2} : {0}[{1}]", _type, _index.ToString(), _name);
-        }
-
-        /// <summary>
-        /// Writes this instance to a binary stream
-        /// </summary>
-        internal void WriteBinary(BinaryWriter bw)
-        {
-            bw.Write((byte) _type);
-            bw.Write(_index);
-            bw.Write(_name);
-        }
-
-        /// <summary>
-        /// Reads a symbolref from a binary stream 
-        /// </summary>
-        internal static SymbolRef ReadBinary(BinaryReader br)
-        {
-            var that = new SymbolRef
-            {
-                _type = (SymbolRefType) br.ReadByte(), _index = br.ReadInt32(), _name = br.ReadString()
-            };
-            return that;
-        }
-
-        internal void WriteBinaryEnv(BinaryWriter bw, Dictionary<SymbolRef, int> symbolMap)
-        {
-            if (_env != null)
-            {
-                bw.Write(symbolMap[_env]);
-            }
-            else
-            {
-                bw.Write(-1);
-            }
-        }
-
-        internal void ReadBinaryEnv(BinaryReader br, SymbolRef[] symbolRefs)
-        {
-            int idx = br.ReadInt32();
-
-            if (idx >= 0)
-            {
-                _env = symbolRefs[idx];
-            }
         }
     }
 }

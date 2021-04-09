@@ -199,7 +199,7 @@ namespace MoonSharp.Interpreter.Tree.Expressions
 
         public int CompileBody(ByteCode bc, string friendlyName)
         {
-            string funcName = friendlyName ?? ("<" + _begin.FormatLocation(bc.Script, true) + ">");
+            string funcName = friendlyName ?? $"<{_begin.FormatLocation(bc.Script)}>";
 
             bc.PushSourceRef(_begin);
 

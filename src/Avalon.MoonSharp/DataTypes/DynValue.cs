@@ -522,42 +522,6 @@ namespace MoonSharp.Interpreter
         }
 
         /// <summary>
-        /// Returns a string which is what it's expected to be output by debuggers.
-        /// </summary>
-        public string ToDebugPrintString()
-        {
-            if (_object != null && _object is RefIdObject refid)
-            {
-                string typeString = this.Type.ToLuaTypeString();
-
-                if (refid is UserData ud)
-                {
-                    string str = ud.Descriptor.AsString(ud.Object);
-
-                    if (str != null)
-                    {
-                        return str;
-                    }
-                }
-
-                return refid.FormatTypeString(typeString);
-            }
-
-            switch (this.Type)
-            {
-                case DataType.Tuple:
-                    return string.Join("\t", this.Tuple.Select(t => t.ToPrintString()).ToArray());
-                case DataType.TailCallRequest:
-                    return "(TailCallRequest)";
-                case DataType.YieldRequest:
-                    return "(YieldRequest)";
-                default:
-                    return this.ToString();
-            }
-        }
-
-
-        /// <summary>
         /// Returns a <see cref="System.String" /> that represents this instance.
         /// </summary>
         /// <returns>
@@ -949,7 +913,8 @@ namespace MoonSharp.Interpreter
         /// </summary>
         public T ToObject<T>()
         {
-            return (T) this.ToObject(typeof(T));
+            var obj = (T) this.ToObject(typeof(T));
+            return obj ?? default;
         }
 
         /// <summary>

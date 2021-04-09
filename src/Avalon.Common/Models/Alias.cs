@@ -87,6 +87,20 @@ namespace Avalon.Common.Models
         /// <inheritdoc />
         public bool IsLua { get; set; } = false;
 
+
+        private ExecuteType _executeType = ExecuteType.Command;
+
+        /// <inheritdoc />
+        public ExecuteType ExecuteAs
+        {
+            get => _executeType;
+            set
+            {
+                _executeType = value;
+                OnPropertyChanged(nameof(ExecuteAs));
+            }
+        }
+
         /// <inheritdoc />
         public bool Lock { get; set; } = false;
 

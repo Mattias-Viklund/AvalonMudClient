@@ -47,7 +47,6 @@ namespace MoonSharp.Interpreter.Tree.Statements
 
             bc.PopSourceRef();
             bc.PushSourceRef(_until);
-            bc.Emit_Debug("..end");
 
             _condition.Compile(bc);
             bc.Emit_Leave(_stackFrame);
@@ -55,11 +54,11 @@ namespace MoonSharp.Interpreter.Tree.Statements
 
             bc.LoopTracker.Loops.Pop();
 
-            int exitpoint = bc.GetJumpPointForNextInstruction();
+            int exitPoint = bc.GetJumpPointForNextInstruction();
 
             foreach (var i in l.BreakJumps)
             {
-                i.NumVal = exitpoint;
+                i.NumVal = exitPoint;
             }
 
             bc.PopSourceRef();

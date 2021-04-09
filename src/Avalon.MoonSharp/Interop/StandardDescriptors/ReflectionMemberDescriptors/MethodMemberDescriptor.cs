@@ -44,7 +44,7 @@ namespace MoonSharp.Interpreter.Interop
             }
             else
             {
-                m_IsAction = ((MethodInfo) methodBase).ReturnType == typeof(void);
+                m_IsAction = ((MethodInfo)methodBase).ReturnType == typeof(void);
             }
 
             var reflectionParams = methodBase.GetParameters();
@@ -99,7 +99,7 @@ namespace MoonSharp.Interpreter.Interop
 
             if (this.AccessMode == InteropAccessMode.Preoptimized)
             {
-                ((IOptimizableDescriptor) this).Optimize();
+                ((IOptimizableDescriptor)this).Optimize();
             }
         }
 
@@ -138,48 +138,45 @@ namespace MoonSharp.Interpreter.Interop
                 return;
             }
 
-            using (PerformanceStatistics.StartGlobalStopwatch(PerformanceCounter.AdaptersCompilation))
+            var ep = Expression.Parameter(typeof(object[]), "pars");
+            var objinst = Expression.Parameter(typeof(object), "instance");
+            var inst = Expression.Convert(objinst, this.MethodInfo.DeclaringType);
+
+            var args = new Expression[parameters.Length];
+
+            for (int i = 0; i < parameters.Length; i++)
             {
-                var ep = Expression.Parameter(typeof(object[]), "pars");
-                var objinst = Expression.Parameter(typeof(object), "instance");
-                var inst = Expression.Convert(objinst, this.MethodInfo.DeclaringType);
-
-                var args = new Expression[parameters.Length];
-
-                for (int i = 0; i < parameters.Length; i++)
+                if (parameters[i].OriginalType.IsByRef)
                 {
-                    if (parameters[i].OriginalType.IsByRef)
-                    {
-                        throw new InternalErrorException("Out/Ref params cannot be precompiled.");
-                    }
-
-                    var x = Expression.ArrayIndex(ep, Expression.Constant(i));
-                    args[i] = Expression.Convert(x, parameters[i].OriginalType);
+                    throw new InternalErrorException("Out/Ref params cannot be precompiled.");
                 }
 
-                Expression fn;
+                var x = Expression.ArrayIndex(ep, Expression.Constant(i));
+                args[i] = Expression.Convert(x, parameters[i].OriginalType);
+            }
 
-                if (this.IsStatic)
-                {
-                    fn = Expression.Call(methodInfo, args);
-                }
-                else
-                {
-                    fn = Expression.Call(inst, methodInfo, args);
-                }
+            Expression fn;
+
+            if (this.IsStatic)
+            {
+                fn = Expression.Call(methodInfo, args);
+            }
+            else
+            {
+                fn = Expression.Call(inst, methodInfo, args);
+            }
 
 
-                if (m_IsAction)
-                {
-                    var lambda = Expression.Lambda<Action<object, object[]>>(fn, objinst, ep);
-                    Interlocked.Exchange(ref m_OptimizedAction, lambda.Compile());
-                }
-                else
-                {
-                    var fnc = Expression.Convert(fn, typeof(object));
-                    var lambda = Expression.Lambda<Func<object, object[], object>>(fnc, objinst, ep);
-                    Interlocked.Exchange(ref m_OptimizedFunc, lambda.Compile());
-                }
+            if (m_IsAction)
+            {
+                var lambda = Expression.Lambda<Action<object, object[]>>(fn, objinst, ep);
+                Interlocked.Exchange(ref m_OptimizedAction, lambda.Compile());
+            }
+            else
+            {
+                var fnc = Expression.Convert(fn, typeof(object));
+                var lambda = Expression.Lambda<Func<object, object[], object>>(fnc, objinst, ep);
+                Interlocked.Exchange(ref m_OptimizedFunc, lambda.Compile());
             }
         }
 
@@ -199,11 +196,11 @@ namespace MoonSharp.Interpreter.Interop
 
             if (this.IsConstructor)
             {
-                t.Set("ret", DynValue.NewString(((ConstructorInfo) this.MethodInfo).DeclaringType.FullName));
+                t.Set("ret", DynValue.NewString(((ConstructorInfo)this.MethodInfo).DeclaringType.FullName));
             }
             else
             {
-                t.Set("ret", DynValue.NewString(((MethodInfo) this.MethodInfo).ReturnType.FullName));
+                t.Set("ret", DynValue.NewString(((MethodInfo)this.MethodInfo).ReturnType.FullName));
             }
 
             if (m_IsArrayCtor)
@@ -332,7 +329,7 @@ namespace MoonSharp.Interpreter.Interop
             if (this.AccessMode == InteropAccessMode.LazyOptimized &&
                 m_OptimizedFunc == null && m_OptimizedAction == null)
             {
-                ((IOptimizableDescriptor) this).Optimize();
+                ((IOptimizableDescriptor)this).Optimize();
             }
 
             List<int> outParams;
@@ -357,7 +354,7 @@ namespace MoonSharp.Interpreter.Interop
             {
                 if (this.IsConstructor)
                 {
-                    retv = ((ConstructorInfo) this.MethodInfo).Invoke(pars);
+                    retv = ((ConstructorInfo)this.MethodInfo).Invoke(pars);
                 }
                 else
                 {

@@ -12,28 +12,29 @@ using Avalon.Colors;
 using Avalon.Common.Colors;
 using Avalon.Common.Interfaces;
 using Avalon.Common.Models;
+using Avalon.Common.Triggers;
+using Avalon.Extensions;
+using MahApps.Metro.IconPacks;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
-using Avalon.Extensions;
-using MahApps.Metro.IconPacks;
-using System.ComponentModel;
-using Avalon.Common.Triggers;
 
 namespace Avalon.Lua
 {
     /// <summary>
     /// C# methods that are exposed to LUA.
     /// </summary>
-    public class LuaCommands
+    public class ScriptCommands
     {
-        public LuaCommands(IInterpreter interp, Random rnd)
+        public ScriptCommands(IInterpreter interp, Random rnd)
         {
             _interpreter = interp;
             _random = rnd;
@@ -601,6 +602,26 @@ namespace Avalon.Lua
         {
             // ReSharper disable once AsyncConverter.AsyncWait
             Task.Delay(milliseconds).Wait();
+        }
+
+        /// <summary>
+        /// Pauses the lua script for a designated amount of milliseconds.  This should work with both
+        /// sync and not sync Lua calls.
+        /// </summary>
+        /// <param name="milliseconds"></param>
+        [Description("Pauses a Lua script for the designated amount of milliseconds.")]
+        public void Pause(int milliseconds)
+        {
+            DispatcherFrame df = new DispatcherFrame();
+
+            new Thread(() =>
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(milliseconds));
+                df.Continue = false;
+
+            }).Start();
+
+            Dispatcher.PushFrame(df);
         }
 
         /// <summary>
@@ -1878,7 +1899,9 @@ namespace Avalon.Lua
         [Description("The number of Lua scripts that are currently running.")]
         public int LuaScriptsActive()
         {
-            return ((Interpreter)_interpreter).LuaCaller.ActiveLuaScripts;
+            // TODO: Scripting
+            return -1;
+            //return ((Interpreter)_interpreter).LuaCaller.ActiveLuaScripts;
         }
 
         /// <summary>

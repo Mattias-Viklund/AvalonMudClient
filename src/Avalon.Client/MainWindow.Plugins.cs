@@ -178,7 +178,17 @@ namespace Avalon
                             continue;
                         }
 
-                        Interp.LuaCaller.RegisterType(item.Value, item.Key);
+                        // Set the actual class that has the Lua commands.
+                        var instance = Activator.CreateInstance(item.Value) as ILuaCommand;
+
+                        if (instance == null)
+                        {
+                            continue;
+                        }
+
+                        instance.Interpreter = this.Interp;
+
+                        Interp.ScriptHost.RegisterObject<ILuaCommand>(item.Value, instance, item.Key);
                     }
 
                     App.Conveyor.EchoLog($"   {plugin.Triggers.Count} Triggers Loaded", LogType.Success);

@@ -30,10 +30,7 @@ namespace MoonSharp.Interpreter.Execution.VM
             ex.InstructionPtr = ip;
 
             var sref = this.GetCurrentSourceRef(ip);
-
             ex.DecorateMessage(_script, sref, ip);
-
-            ex.CallStack = this.Debugger_GetCallStack(sref);
         }
     }
 }

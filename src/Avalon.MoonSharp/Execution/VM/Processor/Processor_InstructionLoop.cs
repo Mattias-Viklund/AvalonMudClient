@@ -32,11 +32,6 @@ namespace MoonSharp.Interpreter.Execution.VM
                 {
                     var i = _rootChunk.Code[instructionPtr];
 
-                    if (_debug.DebuggerAttached != null)
-                    {
-                        this.ListenDebugger(i, instructionPtr);
-                    }
-
                     ++executedInstructions;
 
                     if (canAutoYield && executedInstructions > AutoYieldCounter)
@@ -361,14 +356,6 @@ namespace MoonSharp.Interpreter.Execution.VM
                 {
                     ex.Rethrow();
                     throw;
-                }
-
-                if (_debug.DebuggerAttached != null && _debug.DebuggerAttached.SignalRuntimeException((ScriptRuntimeException)ex))
-                {
-                    if (instructionPtr >= 0 && instructionPtr < _rootChunk.Code.Count)
-                    {
-                        this.ListenDebugger(_rootChunk.Code[instructionPtr], instructionPtr);
-                    }
                 }
 
                 for (int i = 0; i < _executionStack.Count; i++)
@@ -848,11 +835,11 @@ namespace MoonSharp.Interpreter.Execution.VM
 
             if (fn.Type == DataType.ClrFunction)
             {
-                //IList<DynValue> args = new Slice<DynValue>(m_ValueStack, m_ValueStack.Count - argsCount, argsCount, false);
                 var args = this.CreateArgsListForFunctionCall(argsCount, 0);
                 // we expand tuples before callbacks
-                // args = DynValue.ExpandArgumentsToList(args);
-                var sref = this.GetCurrentSourceRef(instructionPtr);
+                // instructionPtr - 1: instructionPtr already points to the next instruction at this moment
+                // but we need the current instruction here
+                var sref = GetCurrentSourceRef(instructionPtr - 1);
 
                 _executionStack.Push(new CallStackItem
                 {
@@ -885,7 +872,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                     BasePointer = _valueStack.Count,
                     ReturnAddress = instructionPtr,
                     Debug_EntryPoint = fn.Function.EntryPointByteCodeLocation,
-                    CallingSourceRef = this.GetCurrentSourceRef(instructionPtr),
+                    CallingSourceRef = GetCurrentSourceRef(instructionPtr - 1),
                     ClosureScope = fn.Function.ClosureContext,
                     ErrorHandler = handler,
                     Continuation = continuation,

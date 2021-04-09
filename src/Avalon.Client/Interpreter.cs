@@ -20,7 +20,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalon.Colors;
 using System.Text;
+using Avalon.Common.Scripting;
 using Cysharp.Text;
+using MoonSharp.Interpreter;
 
 namespace Avalon
 {
@@ -46,8 +48,39 @@ namespace Avalon
                 HashCommands.Add(cmd);
             }
 
-            // Initialize the Lua wrapper we'll make calls from in this class.
-            this.LuaCaller = new LuaCaller(this);
+            // Setup the scripting environment.  Error handlers are set here allowing the actual scripting
+            // environment to stay generic while the client worries about the implementation details.
+            _random = new Random();
+            _scriptCommands = new ScriptCommands(this, _random);
+            this.ScriptHost = new ScriptHost();
+            this.ScriptHost.RegisterObject<ScriptCommands>(_scriptCommands.GetType(), _scriptCommands, "lua");
+
+            this.ScriptHost.MoonSharp.ExceptionHandler = (ex) =>
+            {
+                this.Conveyor.EchoError($"Lua Exception: {ex.Message}");
+
+                if (ex.InnerException is InterpreterException innerEx)
+                {
+                    this.Conveyor.EchoError($"Lua Inner Exception: {innerEx?.DecoratedMessage}");
+                }
+                else
+                {
+                    this.Conveyor.EchoError($"Lua Inner Exception: {ex.InnerException?.Message ?? "null message"}");
+                }
+            };
+
+            this.ScriptHost.NLua.ExceptionHandler = (ex) =>
+            {
+                if (ex is NLua.Exceptions.LuaException exLua)
+                {
+                    this.Conveyor.EchoError($"NLua Inner Exception: {ex.Message}");
+                    this.Conveyor.EchoError($"NLua Stack Trace: {ex.StackTrace}");
+                }
+                else
+                {
+                    this.Conveyor.EchoError($"NLua Exception: {ex.Message}");
+                }
+            };
         }
 
         /// <summary>
@@ -270,7 +303,7 @@ namespace Avalon
                     alias.Count++;
 
                     // If the alias is Lua then variables will be swapped in if necessary and then executed.
-                    if (alias.IsLua)
+                    if (alias.IsLua || alias.ExecuteAs == ExecuteType.LuaMoonsharp)
                     {
                         list.Clear();
 
@@ -278,23 +311,26 @@ namespace Avalon
                         // the replacements if the string contains a percent sign.
                         if (alias.Command.Contains("%", StringComparison.Ordinal))
                         {
-                            var sb = new StringBuilder(alias.Command);
-
-                            // %0 will represent the entire matched string.
-                            sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
-
-                            // %1-%9
-                            for (int i = 1; i <= 9; i++)
+                            using (var sb = ZString.CreateStringBuilder())
                             {
-                                sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
-                            }
+                                sb.Append(alias.Command);
 
-                            // This is all that's going to execute as it clears the list.. we can "fire and forget".
-                            this.LuaCaller.ExecuteAsync(sb.ToString());
+                                // %0 will represent the entire matched string.
+                                sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
+
+                                // %1-%9
+                                for (int i = 1; i <= 9; i++)
+                                {
+                                    sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
+                                }
+
+                                // This is all that's going to execute as it clears the list.. we can "fire and forget".
+                                this.ScriptHost.MoonSharp.ExecuteAsync<object>(sb.ToString());
+                            }
                         }
                         else
                         {
-                            this.LuaCaller.ExecuteAsync(alias.Command);
+                            this.ScriptHost.MoonSharp.ExecuteAsync<object>(alias.Command);
                         }
 
                         return list;
@@ -581,11 +617,6 @@ namespace Avalon
         public IConveyor Conveyor { get; set; }
 
         /// <summary>
-        /// A class to handle executing Lua scripts.
-        /// </summary>
-        public LuaCaller LuaCaller { get; set; }
-
-        /// <summary>
         /// Whether or not the commands should be recorded into 
         /// </summary>
         public bool IsRecordingCommands { get; set; } = false;
@@ -594,6 +625,22 @@ namespace Avalon
         /// Commands that have been recorded
         /// </summary>
         public List<string> RecordedCommands { get; set; } = new List<string>();
+
+        /// <summary>
+        /// The Scripting host that contains all of our supported scripting environments.
+        /// </summary>
+        public ScriptHost ScriptHost { get; set; }
+
+        /// <summary>
+        /// An interop object that allows scripts to interact with the .NET environment.
+        /// </summary>
+        private static ScriptCommands _scriptCommands;
+
+        /// <summary>
+        /// Single static Random object that will need to be locked between usages.  Calls to _random
+        /// should be locked for thread safety as Random is not thread safe.
+        /// </summary>
+        private static Random _random;
 
     }
 

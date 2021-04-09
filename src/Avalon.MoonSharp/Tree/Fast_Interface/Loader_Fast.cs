@@ -19,10 +19,7 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
                 lcontext.Anonymous = true;
 
                 Expression exp;
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                {
-                    exp = Expression.Expr(lcontext);
-                }
+                exp = Expression.Expr(lcontext);
 
                 return new DynamicExprExpression(exp, lcontext);
             }
@@ -40,7 +37,7 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
             {
                 Scope = new BuildTimeScope(),
                 Source = source,
-                Lexer = new Lexer(source.SourceID, source.Code, true)
+                Lexer = new Lexer(source.Code, true)
             };
         }
 
@@ -50,16 +47,10 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
 
             try
             {
-                Statement stat;
-
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                {
-                    stat = new ChunkStatement(lcontext);
-                }
+                Statement stat = new ChunkStatement(lcontext);
 
                 int beginIp;
 
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
                 using (bytecode.EnterSource(null))
                 {
                     bytecode.Emit_Nop($"Begin chunk {source.Name}");
@@ -86,14 +77,10 @@ namespace MoonSharp.Interpreter.Tree.Fast_Interface
             {
                 FunctionDefinitionExpression fnx;
 
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.AstCreation))
-                {
-                    fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
-                }
+                fnx = new FunctionDefinitionExpression(lcontext, usesGlobalEnv);
 
                 int beginIp;
 
-                using (script.PerformanceStats.StartStopwatch(PerformanceCounter.Compilation))
                 using (bytecode.EnterSource(null))
                 {
                     bytecode.Emit_Nop($"Begin function {source.Name}");

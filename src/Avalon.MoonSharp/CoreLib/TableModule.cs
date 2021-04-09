@@ -163,7 +163,7 @@ namespace MoonSharp.Interpreter.CoreLib
             int len = GetTableLength(executionContext, vlist);
             var list = vlist.Table;
 
-            if (vvalue.IsNil())
+            if (args.Count == 2)
             {
                 vvalue = vpos;
                 vpos = DynValue.NewNumber(len + 1);

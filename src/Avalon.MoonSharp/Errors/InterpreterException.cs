@@ -54,11 +54,6 @@ namespace MoonSharp.Interpreter
         public int InstructionPtr { get; internal set; }
 
         /// <summary>
-        /// Gets the interpreter call stack.
-        /// </summary>
-        public IList<WatchItem> CallStack { get; internal set; }
-
-        /// <summary>
         /// Gets the decorated message (error message plus error location in script) if possible.
         /// </summary>
         public string DecoratedMessage { get; internal set; }

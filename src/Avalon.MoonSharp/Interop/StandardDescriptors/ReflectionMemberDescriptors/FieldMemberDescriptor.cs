@@ -233,25 +233,22 @@ namespace MoonSharp.Interpreter.Interop
                 return;
             }
 
-            using (PerformanceStatistics.StartGlobalStopwatch(PerformanceCounter.AdaptersCompilation))
+            if (this.IsStatic)
             {
-                if (this.IsStatic)
-                {
-                    var paramExp = Expression.Parameter(typeof(object), "dummy");
-                    var propAccess = Expression.Field(null, this.FieldInfo);
-                    var castPropAccess = Expression.Convert(propAccess, typeof(object));
-                    var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
-                    Interlocked.Exchange(ref m_OptimizedGetter, lambda.Compile());
-                }
-                else
-                {
-                    var paramExp = Expression.Parameter(typeof(object), "obj");
-                    var castParamExp = Expression.Convert(paramExp, this.FieldInfo.DeclaringType);
-                    var propAccess = Expression.Field(castParamExp, this.FieldInfo);
-                    var castPropAccess = Expression.Convert(propAccess, typeof(object));
-                    var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
-                    Interlocked.Exchange(ref m_OptimizedGetter, lambda.Compile());
-                }
+                var paramExp = Expression.Parameter(typeof(object), "dummy");
+                var propAccess = Expression.Field(null, this.FieldInfo);
+                var castPropAccess = Expression.Convert(propAccess, typeof(object));
+                var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
+                Interlocked.Exchange(ref m_OptimizedGetter, lambda.Compile());
+            }
+            else
+            {
+                var paramExp = Expression.Parameter(typeof(object), "obj");
+                var castParamExp = Expression.Convert(paramExp, this.FieldInfo.DeclaringType);
+                var propAccess = Expression.Field(castParamExp, this.FieldInfo);
+                var castPropAccess = Expression.Convert(propAccess, typeof(object));
+                var lambda = Expression.Lambda<Func<object, object>>(castPropAccess, paramExp);
+                Interlocked.Exchange(ref m_OptimizedGetter, lambda.Compile());
             }
         }
     }

@@ -1,14 +1,10 @@
-﻿using MoonSharp.Interpreter.CoreLib;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Diagnostics;
+﻿using MoonSharp.Interpreter.Debugging;
 using MoonSharp.Interpreter.Execution.VM;
 using MoonSharp.Interpreter.IO;
 using MoonSharp.Interpreter.Platforms;
 using MoonSharp.Interpreter.Tree.Fast_Interface;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace MoonSharp.Interpreter
@@ -30,11 +26,13 @@ namespace MoonSharp.Interpreter
         public const string LUA_VERSION = "5.2";
 
         private ByteCode _byteCode;
-        private IDebugger _debugger;
-
         private Processor _mainProcessor;
-        private List<SourceCode> _sources = new List<SourceCode>();
         private Table[] _typeMetaTables = new Table[(int) LuaTypeExtensions.MaxMetaTypes];
+
+        /// <summary>
+        /// Returns the number of instructions held by this <see cref="ByteCode"/> class.
+        /// </summary>
+        public int InstructionCount => _byteCode.InstructionCount;
 
         /// <summary>
         /// Initializes the <see cref="Script"/> class.
@@ -67,9 +65,8 @@ namespace MoonSharp.Interpreter
         public Script(CoreModules coreModules)
         {
             this.Options = new ScriptOptions(DefaultOptions);
-            this.PerformanceStats = new PerformanceStatistics();
             this.Registry = new Table(this);
-
+            
             _byteCode = new ByteCode(this);
             _mainProcessor = new Processor(this, this.Globals, _byteCode);
             this.Globals = new Table(this).RegisterCoreModules(coreModules);
@@ -93,37 +90,10 @@ namespace MoonSharp.Interpreter
         public static ScriptGlobalOptions GlobalOptions { get; }
 
         /// <summary>
-        /// Gets access to performance statistics.
-        /// </summary>
-        public PerformanceStatistics PerformanceStats { get; }
-
-        /// <summary>
         /// Gets the default global table for this script. Unless a different table is intentionally passed (or setfenv has been used)
         /// execution uses this table.
         /// </summary>
         public Table Globals { get; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the debugger is enabled.
-        /// Note that unless a debugger attached, this property returns a 
-        /// value which might not reflect the real status of the debugger.
-        /// Use this property if you want to disable the debugger for some 
-        /// executions.
-        /// </summary>
-        public bool DebuggerEnabled
-        {
-            get => _mainProcessor.DebuggerEnabled;
-            set => _mainProcessor.DebuggerEnabled = value;
-        }
-
-
-        /// <summary>
-        /// Gets the source code count.
-        /// </summary>
-        /// <value>
-        /// The source code count.
-        /// </value>
-        public int SourceCodeCount => _sources.Count;
 
         /// <summary>
         /// MoonSharp (like Lua itself) provides a registry, a predefined table that can be used by any CLR code to 
@@ -150,30 +120,14 @@ namespace MoonSharp.Interpreter
         {
             this.CheckScriptOwnership(globalTable);
 
-            string chunkName = $"libfunc_{funcFriendlyName ?? _sources.Count.ToString()}";
+            string chunkName = $"libfunc_{funcFriendlyName ?? "x"}";
 
-            var source = new SourceCode(chunkName, code, _sources.Count, this);
-
-            _sources.Add(source);
+            var source = new SourceCode(chunkName, code, this);
 
             int address = Loader_Fast.LoadFunction(this, source, _byteCode, globalTable != null || this.Globals != null);
 
-            this.SignalSourceCodeChange(source);
-            this.SignalByteCodeChange();
-
             return this.MakeClosure(address, globalTable ?? this.Globals);
         }
-
-        private void SignalByteCodeChange()
-        {
-            _debugger?.SetByteCode(_byteCode.Code.Select(s => s.ToString()).ToArray());
-        }
-
-        private void SignalSourceCodeChange(SourceCode source)
-        {
-            _debugger?.SetSourceCode(source);
-        }
-
 
         /// <summary>
         /// Loads a string containing a Lua/MoonSharp script.
@@ -187,27 +141,8 @@ namespace MoonSharp.Interpreter
         public DynValue LoadString(string code, Table globalTable = null, string codeFriendlyName = null)
         {
             this.CheckScriptOwnership(globalTable);
-
-            if (code.StartsWith(StringModule.BASE64_DUMP_HEADER))
-            {
-                code = code.Substring(StringModule.BASE64_DUMP_HEADER.Length);
-                var data = Convert.FromBase64String(code);
-                using (var ms = new MemoryStream(data))
-                {
-                    return this.LoadStream(ms, globalTable, codeFriendlyName);
-                }
-            }
-
-            string chunkName = $"{codeFriendlyName ?? $"chunk_{_sources.Count.ToString()}"}";
-
-            var source = new SourceCode(codeFriendlyName ?? chunkName, code, _sources.Count, this);
-
-            _sources.Add(source);
-
+            var source = new SourceCode(codeFriendlyName ?? $"chunk_x", code, this);
             int address = Loader_Fast.LoadChunk(this, source, _byteCode);
-
-            this.SignalSourceCodeChange(source);
-            this.SignalByteCodeChange();
 
             return this.MakeClosure(address, globalTable ?? this.Globals);
         }
@@ -227,74 +162,12 @@ namespace MoonSharp.Interpreter
 
             Stream codeStream = new UndisposableStream(stream);
 
-            if (!Processor.IsDumpStream(codeStream))
+            using (var sr = new StreamReader(codeStream))
             {
-                using (var sr = new StreamReader(codeStream))
-                {
-                    string scriptCode = sr.ReadToEnd();
-                    return this.LoadString(scriptCode, globalTable, codeFriendlyName);
-                }
+                string scriptCode = sr.ReadToEnd();
+                return this.LoadString(scriptCode, globalTable, codeFriendlyName);
             }
-
-            string chunkName = $"{codeFriendlyName ?? "dump_" + _sources.Count.ToString()}";
-
-            var source = new SourceCode(codeFriendlyName ?? chunkName,
-                $"-- This script was decoded from a binary dump - dump_{_sources.Count.ToString()}",
-                _sources.Count, this);
-
-            _sources.Add(source);
-
-            int address = _mainProcessor.Undump(codeStream, _sources.Count - 1, globalTable ?? this.Globals,
-                out bool hasUpvalues);
-
-            this.SignalSourceCodeChange(source);
-            this.SignalByteCodeChange();
-
-            if (hasUpvalues)
-            {
-                return this.MakeClosure(address, globalTable ?? this.Globals);
-            }
-
-            return this.MakeClosure(address);
         }
-
-        /// <summary>
-        /// Dumps on the specified stream.
-        /// </summary>
-        /// <param name="function">The function.</param>
-        /// <param name="stream">The stream.</param>
-        /// <exception cref="System.ArgumentException">
-        /// function arg is not a function!
-        /// or
-        /// stream is readonly!
-        /// or
-        /// function arg has upvalues other than _ENV
-        /// </exception>
-        public void Dump(DynValue function, Stream stream)
-        {
-            this.CheckScriptOwnership(function);
-
-            if (function.Type != DataType.Function)
-            {
-                throw new ArgumentException("function arg is not a function!");
-            }
-
-            if (!stream.CanWrite)
-            {
-                throw new ArgumentException("stream is readonly!");
-            }
-
-            var upvaluesType = function.Function.GetUpvaluesType();
-
-            if (upvaluesType == Closure.UpvaluesType.Closure)
-            {
-                throw new ArgumentException("function arg has upvalues other than _ENV");
-            }
-
-            var outStream = new UndisposableStream(stream);
-            _mainProcessor.Dump(outStream, function.Function.EntryPointByteCodeLocation, upvaluesType == Closure.UpvaluesType.Environment);
-        }
-
 
         /// <summary>
         /// Loads a string containing a Lua/MoonSharp script.
@@ -482,19 +355,20 @@ namespace MoonSharp.Interpreter
 
             if (function.Type != DataType.Function && function.Type != DataType.ClrFunction)
             {
-                var metafunction = _mainProcessor.GetMetamethod(ecToken, function, "__call");
+                var metaFunction = _mainProcessor.GetMetamethod(ecToken, function, "__call");
 
-                if (metafunction != null)
+                if (metaFunction != null)
                 {
-                    var metaargs = new DynValue[args.Length + 1];
-                    metaargs[0] = function;
+                    var metaArgs = new DynValue[args.Length + 1];
+                    metaArgs[0] = function;
+
                     for (int i = 0; i < args.Length; i++)
                     {
-                        metaargs[i + 1] = args[i];
+                        metaArgs[i + 1] = args[i];
                     }
 
-                    function = metafunction;
-                    args = metaargs;
+                    function = metaFunction;
+                    args = metaArgs;
                 }
                 else
                 {
@@ -617,7 +491,6 @@ namespace MoonSharp.Interpreter
                 .ContinueWith(prevTask => this.CallAsync(ecToken, prevTask.Result).Result);
         }
 
-
         /// <summary>
         /// Asynchronously loads and executes a stream containing a Lua/MoonSharp script.
         /// </summary>
@@ -715,23 +588,6 @@ namespace MoonSharp.Interpreter
             return Task.Factory.StartNew(() => this.LoadFunction(code, globalTable, funcFriendlyName));
         }
 
-
-        /// <summary>
-        /// Asynchronously dumps a function on the specified stream.
-        /// </summary>
-        /// <param name="function">The function.</param>
-        /// <param name="stream">The stream.</param>
-        /// <exception cref="System.ArgumentException">function arg is not a function!
-        /// or
-        /// stream is readonly!
-        /// or
-        /// function arg has upvalues other than _ENV</exception>
-        public Task DumpAsync(DynValue function, Stream stream)
-        {
-            return Task.Factory.StartNew(() => this.Dump(function, stream));
-        }
-
-
         /// <summary>
         /// Calls the specified function.
         /// </summary>
@@ -761,7 +617,6 @@ namespace MoonSharp.Interpreter
         {
             return Task.Factory.StartNew(() => this.Internal_Call(ecToken, function, args));
         }
-
 
         /// <summary>
         /// Asynchronously calls the specified function.
@@ -879,35 +734,6 @@ namespace MoonSharp.Interpreter
             return this.CreateCoroutine(DynValue.FromObject(this, function));
         }
 
-
-        /// <summary>
-        /// Attaches a debugger. This usually should be called by the debugger itself and not by user code.
-        /// </summary>
-        /// <param name="debugger">The debugger object.</param>
-        public void AttachDebugger(IDebugger debugger)
-        {
-            this.DebuggerEnabled = true;
-            _debugger = debugger;
-            _mainProcessor.AttachDebugger(debugger);
-
-            foreach (var src in _sources)
-            {
-                this.SignalSourceCodeChange(src);
-            }
-
-            this.SignalByteCodeChange();
-        }
-
-        /// <summary>
-        /// Gets the source code.
-        /// </summary>
-        /// <param name="sourceCodeID">The source code identifier.</param>
-        public SourceCode GetSourceCode(int sourceCodeID)
-        {
-            return _sources[sourceCodeID];
-        }
-
-
         /// <summary>
         /// Loads a module as per the "require" Lua function. http://www.lua.org/pil/8.1.html
         /// </summary>
@@ -980,12 +806,20 @@ namespace MoonSharp.Interpreter
         }
 
         /// <summary>
+        /// Resets and clears the code that's been loaded into this <see cref="Script"/> object.
+        /// </summary>
+        public void Reset()
+        {
+            _byteCode.Reset();
+        }
+
+        /// <summary>
         /// Creates a new dynamic expression.
         /// </summary>
         /// <param name="code">The code of the expression.</param>
         public DynamicExpression CreateDynamicExpression(string code)
         {
-            var dee = Loader_Fast.LoadDynamicExpr(this, new SourceCode("__dynamic", code, -1, this));
+            var dee = Loader_Fast.LoadDynamicExpr(this, new SourceCode("__dynamic", code, this));
             return new DynamicExpression(this, code, dee);
         }
 

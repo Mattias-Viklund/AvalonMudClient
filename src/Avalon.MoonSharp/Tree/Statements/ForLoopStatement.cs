@@ -77,7 +77,6 @@ namespace MoonSharp.Interpreter.Tree.Statements
             bc.PopSourceRef();
             bc.PushSourceRef(_refEnd);
 
-            bc.Emit_Debug("..end");
             bc.Emit_Leave(_stackFrame);
             bc.Emit_Incr(1);
             bc.Emit_Jump(OpCode.Jump, start);

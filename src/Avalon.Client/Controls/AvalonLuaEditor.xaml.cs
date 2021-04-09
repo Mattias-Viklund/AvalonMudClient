@@ -104,8 +104,8 @@ namespace Avalon.Controls
             // Call our single point of Lua entry.
             try
             {
-                var lua = App.MainWindow.Interp.LuaCaller;
-                _ = lua.ExecuteAsync(Editor.Text);
+                var lua = App.MainWindow.Interp.ScriptHost.MoonSharp;
+                _ = lua.ExecuteAsync<object>(Editor.Text);
             }
             catch (Exception ex)
             {
@@ -171,7 +171,7 @@ namespace Avalon.Controls
                     };
 
                     // Construct our custom highlighting rule via reflection.
-                    var t = typeof(LuaCommands);
+                    var t = typeof(ScriptCommands);
                     var sb = new StringBuilder();
                     sb.Append(@"\b(");
 

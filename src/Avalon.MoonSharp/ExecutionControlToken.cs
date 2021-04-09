@@ -8,9 +8,9 @@ namespace MoonSharp.Interpreter
     /// </summary>
     public class ExecutionControlToken
     {
-        public static readonly ExecutionControlToken Dummy = new ExecutionControlToken {_isDummy = true};
+        public static readonly ExecutionControlToken Dummy = new() {_isDummy = true};
 
-        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private CancellationTokenSource _cancellationTokenSource = new();
 
         private bool _isDummy;
 

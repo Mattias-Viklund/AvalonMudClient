@@ -1,9 +1,8 @@
-﻿using System;
+﻿using MoonSharp.Interpreter.DataStructs;
+using MoonSharp.Interpreter.Debugging;
+using System;
 using System.Collections.Generic;
 using System.Threading;
-using MoonSharp.Interpreter.DataStructs;
-using MoonSharp.Interpreter.Debugging;
-using MoonSharp.Interpreter.Diagnostics;
 
 namespace MoonSharp.Interpreter.Execution.VM
 {
@@ -11,21 +10,18 @@ namespace MoonSharp.Interpreter.Execution.VM
     {
         private bool _canYield = true;
         private List<Processor> _coroutinesStack;
-        private DebugContext _debug;
-        private int _executionNesting;
-        private FastStack<CallStackItem> _executionStack = new FastStack<CallStackItem>(131072);
+        private FastStack<CallStackItem> _executionStack = new(131072);
         private Table _globalTable;
         private int _owningThreadID = -1;
         private Processor _parent;
         private ByteCode _rootChunk;
         private int _savedInstructionPtr = -1;
         private Script _script;
-        private FastStack<DynValue> _valueStack = new FastStack<DynValue>(131072);
+        private FastStack<DynValue> _valueStack = new(131072);
 
         public Processor(Script script, Table globalContext, ByteCode byteCode)
         {
             _coroutinesStack = new List<Processor>();
-            _debug = new DebugContext();
             _rootChunk = byteCode;
             _globalTable = globalContext;
             _script = script;
@@ -35,7 +31,6 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         private Processor(Processor parentProcessor)
         {
-            _debug = parentProcessor._debug;
             _rootChunk = parentProcessor._rootChunk;
             _globalTable = parentProcessor._globalTable;
             _script = parentProcessor._script;
@@ -48,17 +43,15 @@ namespace MoonSharp.Interpreter.Execution.VM
         {
             var coroutinesStack = _parent != null ? _parent._coroutinesStack : _coroutinesStack;
 
-            if (coroutinesStack.Count > 0 && coroutinesStack[coroutinesStack.Count - 1] != this)
+            if (coroutinesStack.Count > 0 && coroutinesStack[^1] != this)
             {
-                return coroutinesStack[coroutinesStack.Count - 1].Call(ecToken, function, args);
+                return coroutinesStack[^1].Call(ecToken, function, args);
             }
 
             this.EnterProcessor();
 
             try
             {
-                var stopwatch = _script.PerformanceStats.StartStopwatch(PerformanceCounter.Execution);
-
                 _canYield = false;
 
                 try
@@ -69,13 +62,29 @@ namespace MoonSharp.Interpreter.Execution.VM
                 finally
                 {
                     _canYield = true;
-                    stopwatch?.Dispose();
                 }
             }
             finally
             {
                 this.LeaveProcessor();
             }
+        }
+
+        internal Instruction FindMeta(ref int baseAddress)
+        {
+            Instruction meta = _rootChunk.Code[baseAddress];
+
+            // skip nops
+            while (meta.OpCode == OpCode.Nop)
+            {
+                baseAddress++;
+                meta = _rootChunk.Code[baseAddress];
+            }
+
+            if (meta.OpCode != OpCode.Meta)
+                return null;
+
+            return meta;
         }
 
         // pushes all what's required to perform a clr-to-script function call. function can be null if it's already
@@ -115,16 +124,8 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         private void LeaveProcessor()
         {
-            _executionNesting -= 1;
             _owningThreadID = -1;
-
             _parent?._coroutinesStack.RemoveAt(_parent._coroutinesStack.Count - 1);
-
-            if (_executionNesting == 0 && _debug != null && _debug.DebuggerEnabled
-                && _debug.DebuggerAttached != null)
-            {
-                _debug.DebuggerAttached.SignalExecutionEnded();
-            }
         }
 
         private int GetThreadId()
@@ -143,9 +144,6 @@ namespace MoonSharp.Interpreter.Execution.VM
             }
 
             _owningThreadID = threadID;
-
-            _executionNesting += 1;
-
             _parent?._coroutinesStack.Add(this);
         }
 
