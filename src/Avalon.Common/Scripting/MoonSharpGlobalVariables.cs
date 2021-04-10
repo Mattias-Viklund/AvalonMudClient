@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Interop;
 
-namespace Avalon.Lua
+namespace Avalon.Common.Scripting
 {
     /// <summary>
     /// Shared global variables for the Lua environment.
@@ -21,7 +21,7 @@ namespace Avalon.Lua
         /// <summary>
         /// Global variables dictionary.
         /// </summary>
-        readonly Dictionary<string, DynValue> _values = new Dictionary<string, DynValue>();
+        readonly Dictionary<string, DynValue> _values = new();
 
         /// <summary>
         /// Lock to ensure thread safety.

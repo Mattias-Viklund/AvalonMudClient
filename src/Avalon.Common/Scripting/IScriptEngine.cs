@@ -66,6 +66,22 @@ namespace Avalon.Common.Scripting
         T ExecuteFunction<T>(string functionName, string code, params string[] args);
 
         /// <summary>
+        /// Executes code in a new static instance of the script environment that will be 
+        /// discarded after use.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="code"></param>
+        T ExecuteStatic<T>(string code);
+
+        /// <summary>
+        /// Executes code in a new static instance of the script environment that will be 
+        /// discarded after use.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="code"></param>
+        Task<T> ExecuteStaticAsync<T>(string code);
+
+        /// <summary>
         /// Executes the scripting languages garbage collecting feature if it exists.  As an
         /// example, MoonSharp's Lua interpreter uses the default .NET GC while NLua defers
         /// to the native Lua garbage collection.

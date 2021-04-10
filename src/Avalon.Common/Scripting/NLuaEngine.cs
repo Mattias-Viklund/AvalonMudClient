@@ -74,6 +74,8 @@ namespace Avalon.Common.Scripting
         public void Reset()
         {
             this.SharedObjects.Clear();
+
+            // Clear should call Dispose on each of these methods.
             MemoryPool.Clear();
         }
 
@@ -144,6 +146,18 @@ namespace Avalon.Common.Scripting
 
         /// <inheritdoc cref="ExecuteFunction{T}"/>
         public T ExecuteFunction<T>(string functionName, string code, params string[] args)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc cref="ExecuteStatic{T}"/>
+        public T ExecuteStatic<T>(string code)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc cref="ExecuteStaticAsync{T}"/>
+        public Task<T> ExecuteStaticAsync<T>(string code)
         {
             throw new NotImplementedException();
         }

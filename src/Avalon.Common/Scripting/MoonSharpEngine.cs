@@ -8,7 +8,6 @@
  */
 
 using Argus.Memory;
-using Avalon.Lua;
 using MoonSharp.Interpreter;
 using System;
 using System.Collections.Generic;
@@ -31,9 +30,7 @@ namespace Avalon.Common.Scripting
         /// </summary>
         public MoonSharpGlobalVariables GlobalVariables { get; private set; }
 
-        /// <summary>
-        /// A list of shared objects that will be passed to each Lua script.
-        /// </summary>
+        /// <inheritdoc cref="SharedObjects"/>
         public Dictionary<string, object> SharedObjects { get; set; } = new();
 
         /// <inheritdoc cref="ExceptionHandler"/>
@@ -51,27 +48,33 @@ namespace Avalon.Common.Scripting
 
             MemoryPool = new ObjectPool<Script>
             {
-                InitAction = l =>
-                {
-                    // Setup Lua
-                    l.Options.CheckThreadAccess = false;
-
-                    // Dynamic types from plugins.  These are created when they are registered and only need to be
-                    // added into globals here for use.
-                    foreach (var item in this.SharedObjects)
-                    {
-                        l.Globals.Set(item.Key, (DynValue)item.Value);
-                    }
-
-                    // Set the global variables that are specifically only available in Lua.
-                    l.Globals["global"] = this.GlobalVariables;
-                },
-                ReturnAction = l =>
+                InitAction = this.InitializeScript,
+                ReturnAction = script =>
                 {
                 }
             };
 
             Script.WarmUp();
+        }
+
+        /// <summary>
+        /// The default options and references to set on our <see cref="Script"/> objects.
+        /// </summary>
+        /// <param name="script"></param>
+        private void InitializeScript(Script script)
+        {
+            // Setup Lua
+            script.Options.CheckThreadAccess = false;
+
+            // Dynamic types from plugins.  These are created when they are registered and only need to be
+            // added into globals here for use.
+            foreach (var item in this.SharedObjects)
+            {
+                script.Globals.Set(item.Key, (DynValue)item.Value);
+            }
+
+            // Set the global variables that are specifically only available in Lua.
+            script.Globals["global"] = this.GlobalVariables;
         }
 
         /// <inheritdoc cref="RegisterObject{T}"/>
@@ -189,6 +192,8 @@ namespace Avalon.Common.Scripting
             // See if the function exists, if it doesn't, we will load it based off of the code provided.
             DynValue fnc = lua.Globals.Get(functionName);
 
+            var ec = new ExecutionControlToken();
+
             // If the function doesn't exist report the error and get out.  The caller should have
             // loaded the function already.
             if (fnc.IsNil())
@@ -198,16 +203,15 @@ namespace Avalon.Common.Scripting
                     return DynValue.Nil.ToObject<T>();
                 }
 
-                _ = lua.DoString(code, codeFriendlyName: functionName);
+                _ = await lua.DoStringAsync(ec, code, codeFriendlyName: functionName);
                 fnc = lua.Globals.Get(functionName);
             }
 
             DynValue ret;
-            var executionControlToken = new ExecutionControlToken();
             
             try
             {
-                ret = await lua.CallAsync(executionControlToken, fnc, args);
+                ret = await lua.CallAsync(ec, fnc, args);
             }
             catch (Exception ex)
             {
@@ -264,6 +268,59 @@ namespace Avalon.Common.Scripting
             finally
             {
                 MemoryPool.Return(lua);
+            }
+
+            return ret.ToObject<T>();
+        }
+
+        /// <inheritdoc cref="ExecuteStatic{T}"/>
+        public T ExecuteStatic<T>(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return DynValue.Nil.ToObject<T>();
+            }
+
+            // Gets a new instance of a Script that will be discarded after use.
+            var lua = new Script();
+            DynValue ret;
+
+            this.InitializeScript(lua);
+
+            try
+            {
+                ret = lua.DoString(code);
+            }
+            catch (Exception ex)
+            {
+                this?.ExceptionHandler(ex);
+                throw;
+            }
+
+            return ret.ToObject<T>();
+        }
+
+        /// <inheritdoc cref="ExecuteStaticAsync{T}"/>
+        public async Task<T> ExecuteStaticAsync<T>(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return DynValue.Nil.ToObject<T>();
+            }
+
+            // Gets a new or used but ready instance of the a Lua object to use.
+            var lua = new Script();
+            DynValue ret;
+            var executionControlToken = new ExecutionControlToken();
+
+            try
+            {
+                ret = await lua.DoStringAsync(executionControlToken, code);
+            }
+            catch (Exception ex)
+            {
+                this?.ExceptionHandler(ex);
+                throw;
             }
 
             return ret.ToObject<T>();
