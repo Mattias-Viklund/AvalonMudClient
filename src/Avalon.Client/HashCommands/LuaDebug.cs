@@ -41,7 +41,7 @@ namespace Avalon.HashCommands
                     var nLua = ((Interpreter)this.Interpreter).ScriptHost.NLua;
                     var scriptHost = ((Interpreter) this.Interpreter).ScriptHost;
 
-                    sb.AppendLine()
+                    sb.AppendLine();
                     sb.Append("{GA{gvalon {WLua Environment Info:{x\r\n");
                     sb.Append("---------------------------------------------------------------------\r\n");
                     sb.AppendFormat(" {{G * {{WScripts Active:{{x                      {{C{0}{{x\r\n", scriptHost.Statistics.ScriptsActive.ToString());
