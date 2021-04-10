@@ -313,6 +313,8 @@ namespace Avalon.Common.Scripting
             DynValue ret;
             var executionControlToken = new ExecutionControlToken();
 
+            this.InitializeScript(lua);
+
             try
             {
                 ret = await lua.DoStringAsync(executionControlToken, code);

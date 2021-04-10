@@ -101,11 +101,11 @@ namespace Avalon.Controls
         /// <param name="e"></param>
         private void ButtonRunLua_OnClick(object sender, RoutedEventArgs e)
         {
-            // Call our single point of Lua entry.
             try
             {
-                var lua = App.MainWindow.Interp.ScriptHost.MoonSharp;
-                _ = lua.ExecuteAsync<object>(Editor.Text);
+                // Executes a single use one time script that will be discarded when done.
+                //_ = App.MainWindow.Interp.ScriptHost.MoonSharp.ExecuteStaticAsync<object>(Editor.Text);
+                _ = App.MainWindow.Interp.ScriptHost.MoonSharp.ExecuteStaticAsync<object>(Editor.Text);
             }
             catch (Exception ex)
             {
