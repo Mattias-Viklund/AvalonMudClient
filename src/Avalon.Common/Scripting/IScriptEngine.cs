@@ -24,6 +24,11 @@ namespace Avalon.Common.Scripting
         Dictionary<string, object> SharedObjects { get; set; }
 
         /// <summary>
+        /// A reference to the parent <see cref="ScriptHost"/>.
+        /// </summary>
+        ScriptHost ScriptHost { get; set; }
+
+        /// <summary>
         /// Registers an instantiated object with the script engine.  This object will be passed into
         /// the engine for use by scripts, including it's state if any.  An object if thread safe
         /// can be shared between many script environments.

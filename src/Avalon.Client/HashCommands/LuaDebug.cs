@@ -13,6 +13,7 @@ using CommandLine;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Argus.Extensions;
 using Avalon.Common.Scripting;
 using MoonSharp.Interpreter;
 
@@ -38,14 +39,29 @@ namespace Avalon.HashCommands
                     var sb = Argus.Memory.StringBuilderPool.Take();
                     var moonSharp = ((Interpreter)this.Interpreter).ScriptHost.MoonSharp;
                     var nLua = ((Interpreter)this.Interpreter).ScriptHost.NLua;
+                    var scriptHost = ((Interpreter) this.Interpreter).ScriptHost;
+
+                    sb.AppendLine()
+                    sb.Append("{GA{gvalon {WLua Environment Info:{x\r\n");
+                    sb.Append("---------------------------------------------------------------------\r\n");
+                    sb.AppendFormat(" {{G * {{WScripts Active:{{x                      {{C{0}{{x\r\n", scriptHost.Statistics.ScriptsActive.ToString());
+                    sb.AppendLine();
 
                     sb.Append("{CM{coon{CS{charp{x {WLua Environment Info:{x\r\n");
                     sb.Append("---------------------------------------------------------------------\r\n");
                     sb.AppendFormat(" {{G * {{WMemory Pool:{{x                         {{C{0}/{1}{{x\r\n", moonSharp.MemoryPool.Count().ToString(), moonSharp.MemoryPool.Max.ToString());
                     sb.AppendFormat(" {{G * {{WMemory Pool New Objects:{{x             {{C{0}{{x\r\n", moonSharp.MemoryPool.CounterNewObjects.ToString());
                     sb.AppendFormat(" {{G * {{WMemory Pool Reuse Count:{{x             {{C{0}{{x\r\n", moonSharp.MemoryPool.CounterReusedObjects.ToString());
-                    sb.AppendFormat(" {{G * {{WGlobal Variable Count:{{x               {{C{0}{{x\r\n", moonSharp.GlobalVariables.Count.ToString());
 
+                    int instructionCount = 0;
+
+                    moonSharp.MemoryPool.InvokeAll((script) =>
+                    {
+                        instructionCount += script.InstructionCount;
+                    });
+
+                    sb.AppendFormat(" {{G * {{WMemory Pool Lua Instructions Stored:{{x {{C{0}{{x\r\n", instructionCount.ToString().FormatIfNumber(0));
+                    sb.AppendFormat(" {{G * {{WGlobal Variable Count:{{x               {{C{0}{{x\r\n", moonSharp.GlobalVariables.Count.ToString());
 
                     sb.AppendLine();
                     sb.Append("{CM{coon{CS{charp{x Global Variables:{x\r\n");

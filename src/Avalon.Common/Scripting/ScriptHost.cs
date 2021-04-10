@@ -27,13 +27,19 @@ namespace Avalon.Common.Scripting
         public NLuaEngine NLua { get; set; }
 
         /// <summary>
+        /// The number of scripts that are currently active between all environments.
+        /// </summary>
+        public ScriptStatistics Statistics { get; }
+
+        /// <summary>
         /// Creates a new instance of the <see cref="ScriptHost"/> with all scripting environments
         /// initialized for use.
         /// </summary>
         public ScriptHost()
         {
-            this.MoonSharp = new MoonSharpEngine();
-            this.NLua = new NLuaEngine();
+            this.MoonSharp = new MoonSharpEngine(this);
+            this.NLua = new NLuaEngine(this);
+            this.Statistics = new ScriptStatistics();
         }
 
         /// <summary>
@@ -46,13 +52,15 @@ namespace Avalon.Common.Scripting
         {
             if (enableMoonSharp)
             {
-                this.MoonSharp = new MoonSharpEngine();
+                this.MoonSharp = new MoonSharpEngine(this);
             }
 
             if (enableNLua)
             {
-                this.NLua = new NLuaEngine();
+                this.NLua = new NLuaEngine(this);
             }
+
+            this.Statistics = new ScriptStatistics();
         }
 
         /// <summary>

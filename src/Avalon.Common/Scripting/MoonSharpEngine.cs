@@ -37,10 +37,17 @@ namespace Avalon.Common.Scripting
         public Action<Exception> ExceptionHandler { get; set; }
 
         /// <summary>
+        /// <inheritdoc cref="ScriptHost"/>
+        /// </summary>
+        public ScriptHost ScriptHost { get; set; }
+
+        /// <summary>
         /// Constructor
         /// </summary>
-        public MoonSharpEngine()
+        public MoonSharpEngine(ScriptHost host)
         {
+            this.ScriptHost = host;
+
             // The global variables will be created once and registered.  These will be shared
             // between all script instances.
             UserData.RegisterType<MoonSharpGlobalVariables>();
@@ -132,6 +139,7 @@ namespace Avalon.Common.Scripting
 
             try
             {
+                this.ScriptHost.Statistics.ScriptsActive++;
                 ret = lua.DoString(code);
             }
             catch (Exception ex)
@@ -141,6 +149,7 @@ namespace Avalon.Common.Scripting
             }
             finally
             {
+                this.ScriptHost.Statistics.ScriptsActive--;
                 MemoryPool.Return(lua);
             }
 
@@ -162,6 +171,7 @@ namespace Avalon.Common.Scripting
 
             try
             {
+                this.ScriptHost.Statistics.ScriptsActive++;
                 ret = await lua.DoStringAsync(executionControlToken, code);
             }
             catch (Exception ex)
@@ -171,6 +181,7 @@ namespace Avalon.Common.Scripting
             }
             finally
             {
+                this.ScriptHost.Statistics.ScriptsActive--;
                 MemoryPool.Return(lua);
             }
 
@@ -211,6 +222,7 @@ namespace Avalon.Common.Scripting
             
             try
             {
+                this.ScriptHost.Statistics.ScriptsActive++;
                 ret = await lua.CallAsync(ec, fnc, args);
             }
             catch (Exception ex)
@@ -220,6 +232,7 @@ namespace Avalon.Common.Scripting
             }
             finally
             {
+                this.ScriptHost.Statistics.ScriptsActive--;
                 MemoryPool.Return(lua);
             }
 
@@ -258,6 +271,7 @@ namespace Avalon.Common.Scripting
 
             try
             {
+                this.ScriptHost.Statistics.ScriptsActive++;
                 ret = lua.Call(fnc, args);
             }
             catch (Exception ex)
@@ -267,6 +281,7 @@ namespace Avalon.Common.Scripting
             }
             finally
             {
+                this.ScriptHost.Statistics.ScriptsActive--;
                 MemoryPool.Return(lua);
             }
 
@@ -289,12 +304,17 @@ namespace Avalon.Common.Scripting
 
             try
             {
+                this.ScriptHost.Statistics.ScriptsActive++;
                 ret = lua.DoString(code);
             }
             catch (Exception ex)
             {
                 this?.ExceptionHandler(ex);
                 throw;
+            }
+            finally
+            {
+                this.ScriptHost.Statistics.ScriptsActive--;
             }
 
             return ret.ToObject<T>();
@@ -317,12 +337,17 @@ namespace Avalon.Common.Scripting
 
             try
             {
+                this.ScriptHost.Statistics.ScriptsActive++;
                 ret = await lua.DoStringAsync(executionControlToken, code);
             }
             catch (Exception ex)
             {
                 this?.ExceptionHandler(ex);
                 throw;
+            }
+            finally
+            {
+                this.ScriptHost.Statistics.ScriptsActive--;
             }
 
             return ret.ToObject<T>();

@@ -33,10 +33,17 @@ namespace Avalon.Common.Scripting
         public Action<Exception> ExceptionHandler { get; set; }
 
         /// <summary>
+        /// <inheritdoc cref="ScriptHost"/>
+        /// </summary>
+        public ScriptHost ScriptHost { get; set; }
+
+        /// <summary>
         /// Constructor
         /// </summary>
-        public NLuaEngine()
+        public NLuaEngine(ScriptHost host)
         {
+            this.ScriptHost = host;
+
             MemoryPool = new ObjectPool<NLua.Lua>
             {
                 InitAction = l =>
