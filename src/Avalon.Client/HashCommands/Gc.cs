@@ -35,6 +35,7 @@ namespace Avalon.HashCommands
                                {
                                    try
                                    {
+                                       App.MainWindow.Interp.ScriptHost.Reset();
                                        GC.Collect();
                                        GC.WaitForPendingFinalizers();
                                        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
