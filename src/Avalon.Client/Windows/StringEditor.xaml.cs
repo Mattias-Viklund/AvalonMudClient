@@ -188,33 +188,32 @@ namespace Avalon
         /// <param name="e"></param>
         private async void ButtonSave_OnClick(object sender, RoutedEventArgs e)
         {
-            // TODO - Scripting
             // Allow Lua validating to be turned off, but if it's on attempt to use LoadString to check
             // for any blatant syntax errors.
-            //if (this.EditorMode == EditorType.Lua && App.Settings.AvalonSettings.ValidateLua)
-            //{
-            //    var luaResult = await App.MainWindow.Interp.LuaCaller.ValidateAsync(this.Text);
-                
-            //    if (!luaResult.Success && luaResult.Exception != null)
-            //    {
-            //        string buf = $"An error occurred on line {luaResult.Exception.ToLineNumber}\r\nMessage: {luaResult?.Exception?.Message ?? "N/A"}\r\n\r\nWould you still like to save?";
+            if (this.EditorMode == EditorType.Lua && App.Settings.AvalonSettings.ValidateLua)
+            {
+                var luaResult = await App.MainWindow.Interp.ScriptHost.MoonSharp.ValidateAsync(this.Text);
 
-            //        var confirmDialog = new YesNoDialog()
-            //        {
-            //            Title = "Syntax Error",
-            //            Content = buf,
-            //            PrimaryButtonText = "Yes",
-            //            SecondaryButtonText = "No"
-            //        };
+                if (!luaResult.Success && luaResult.Exception != null)
+                {
+                    string buf = $"An error occurred on line {luaResult.Exception.ToLineNumber.ToString()}\r\nMessage: {luaResult?.Exception?.Message ?? "N/A"}\r\n\r\nWould you still like to save?";
 
-            //        var result = await confirmDialog.ShowAsync();
+                    var confirmDialog = new YesNoDialog()
+                    {
+                        Title = "Syntax Error",
+                        Content = buf,
+                        PrimaryButtonText = "Yes",
+                        SecondaryButtonText = "No"
+                    };
 
-            //        if (result == ContentDialogResult.Secondary)
-            //        {
-            //            return;
-            //        }
-            //    }
-            //}
+                    var result = await confirmDialog.ShowAsync();
+
+                    if (result == ContentDialogResult.Secondary)
+                    {
+                        return;
+                    }
+                }
+            }
 
             this.DialogResult = true;
             this.Close();
