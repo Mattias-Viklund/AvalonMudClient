@@ -24,7 +24,7 @@ namespace MoonSharp.Interpreter.Execution.VM
             long executedInstructions = 0;
             bool canAutoYield = (AutoYieldCounter > 0) && _canYield && (this.State != CoroutineState.Main);
 
-            repeat_execution:
+        repeat_execution:
 
             try
             {
@@ -190,14 +190,14 @@ namespace MoonSharp.Interpreter.Execution.VM
 
                             break;
                         case OpCode.JNil:
-                        {
-                            var v = _valueStack.Pop().ToScalar();
-
-                            if (v.Type == DataType.Nil || v.Type == DataType.Void)
                             {
-                                instructionPtr = i.NumVal;
+                                var v = _valueStack.Pop().ToScalar();
+
+                                if (v.Type == DataType.Nil || v.Type == DataType.Void)
+                                {
+                                    instructionPtr = i.NumVal;
+                                }
                             }
-                        }
                             if (instructionPtr == YIELD_SPECIAL_TRAP)
                             {
                                 goto yield_to_calling_coroutine;
@@ -332,7 +332,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                     }
                 }
 
-                yield_to_calling_coroutine:
+            yield_to_calling_coroutine:
 
                 var yieldRequest = _valueStack.Pop().ToScalar();
 
@@ -380,11 +380,11 @@ namespace MoonSharp.Interpreter.Execution.VM
 
                         if (csi.ClrFunction == null)
                         {
-                            int argscnt = (int) (_valueStack.Pop().Number);
+                            int argscnt = (int)(_valueStack.Pop().Number);
                             _valueStack.RemoveLast(argscnt + 1);
                         }
 
-                        var cbargs = new[] {DynValue.NewString(ex.DecoratedMessage)};
+                        var cbargs = new[] { DynValue.NewString(ex.DecoratedMessage) };
 
                         var handled = csi.ErrorHandler.Invoke(
                             new ScriptExecutionContext(ecToken, this, csi.ErrorHandler,
@@ -406,7 +406,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                 throw;
             }
 
-            return_to_native_code:
+        return_to_native_code:
             return _valueStack.Pop();
         }
 
@@ -415,7 +415,7 @@ namespace MoonSharp.Interpreter.Execution.VM
         {
             try
             {
-                DynValue[] args = {DynValue.NewString(decoratedMessage)};
+                DynValue[] args = { DynValue.NewString(decoratedMessage) };
                 DynValue ret;
 
                 if (messageHandler.Type == DataType.Function)
@@ -766,7 +766,7 @@ namespace MoonSharp.Interpreter.Execution.VM
 
         private void ExecArgs(Instruction I)
         {
-            int numargs = (int) _valueStack.Peek().Number;
+            int numargs = (int)_valueStack.Peek().Number;
 
             // unpacks last tuple arguments to simplify a lot of code down under
             var argsList = this.CreateArgsListForFunctionCall(numargs, 1);
@@ -919,7 +919,7 @@ namespace MoonSharp.Interpreter.Execution.VM
             // perform a fake RET
             var csi = this.PopToBasePointer();
             int retpoint = csi.ReturnAddress;
-            int argscnt = (int) (_valueStack.Pop().Number);
+            int argscnt = (int)(_valueStack.Pop().Number);
             _valueStack.RemoveLast(argscnt + 1);
 
             // Re-push all cur args and func ptr
@@ -941,7 +941,7 @@ namespace MoonSharp.Interpreter.Execution.VM
             {
                 csi = this.PopToBasePointer();
                 retpoint = csi.ReturnAddress;
-                int argscnt = (int) (_valueStack.Pop().Number);
+                int argscnt = (int)(_valueStack.Pop().Number);
                 _valueStack.RemoveLast(argscnt + 1);
                 _valueStack.Push(DynValue.Void);
             }
@@ -950,7 +950,7 @@ namespace MoonSharp.Interpreter.Execution.VM
                 var retval = _valueStack.Pop();
                 csi = this.PopToBasePointer();
                 retpoint = csi.ReturnAddress;
-                int argscnt = (int) (_valueStack.Pop().Number);
+                int argscnt = (int)(_valueStack.Pop().Number);
                 _valueStack.RemoveLast(argscnt + 1);
                 _valueStack.Push(retval);
                 retpoint = this.Internal_CheckForTailRequests(ecToken, i, retpoint);
@@ -964,7 +964,7 @@ namespace MoonSharp.Interpreter.Execution.VM
             {
                 _valueStack.Push(csi.Continuation.Invoke(
                     new ScriptExecutionContext(ecToken, this, csi.Continuation, i.SourceCodeRef),
-                    new DynValue[1] {_valueStack.Pop()}));
+                    new DynValue[1] { _valueStack.Pop() }));
             }
 
             return retpoint;

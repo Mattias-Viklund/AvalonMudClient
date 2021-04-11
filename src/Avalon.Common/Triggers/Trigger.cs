@@ -78,7 +78,7 @@ namespace Avalon.Common.Triggers
         public override bool IsMatch(string line)
         {
             Match match;
-            
+
             // Does this trigger contain any variables?  If so, we'll need to special handle it.  We're also
             // going to require that the VariableReplacement value is set to true so the player has to
             // specifically opt into this.  Since the Gag triggers run -a lot- on the terminal rendering
@@ -124,10 +124,7 @@ namespace Avalon.Common.Triggers
                 {
                     // Set the command that we may or may not process.  Allow the user to have the content of
                     // the last trigger if they need it.
-                    if (!this.IsLua)
-                    {
-                        sb.Append(this.Command?.Replace("%0", TriggeringText) ?? "");
-                    }
+                    sb.Append(this.Command?.Replace("%0", TriggeringText) ?? "");
 
                     // Go through any groups backwards that came back in the trigger match.  Groups are matched in reverse
                     // order so that %1 doesn't overwrite %12 and leave a trailing 2.
@@ -147,10 +144,7 @@ namespace Avalon.Common.Triggers
                             // called to avoid a boxing allocation.  If it's Lua we're not going to swap these values
                             // in.  The reason for this is that Lua parameters are passed in via parameters so the script
                             // can be re-used which is MUCH more memory and CPU efficient.
-                            if (!this.IsLua)
-                            {
-                                sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
-                            }
+                            sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
                         }
                     }
 

@@ -53,13 +53,13 @@ namespace Avalon.Common.Models
             {
                 _command = value;
 
-                if (this.LuaScript == null)
+                // If the command changed and it's Lua, update the re-usable function.
+                if (this.ExecuteAs == ExecuteType.LuaMoonsharp)
                 {
-                    this.LuaScript = new LuaScript(this.AliasExpression);
+                    this.LuaScript ??= new LuaScript(this.AliasExpression);
+                    this.LuaScript.Code = value;
+                    this.LuaScript.Updated = true;
                 }
-
-                this.LuaScript.Code = value;
-                this.LuaScript.Updated = true;
 
                 OnPropertyChanged(nameof(Command));
             }

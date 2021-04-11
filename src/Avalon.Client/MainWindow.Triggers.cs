@@ -14,6 +14,7 @@ using Avalon.Common.Colors;
 using Avalon.Common.Models;
 using Avalon.Extensions;
 using Cysharp.Text;
+using MoonSharp.Interpreter;
 
 namespace Avalon
 {
@@ -166,7 +167,7 @@ namespace Avalon
                         int start = GameTerminal.Document.Text.LastIndexOf(line.FormattedText, StringComparison.Ordinal);
                         GameTerminal.Document.Insert(start, AnsiColors.DarkCyan);
                     }
-                    
+
                     // Only send if it has something in it.  Use the processed command.
                     if (!string.IsNullOrEmpty(item.ProcessedCommand) && !item.IsLua)
                     {
@@ -175,8 +176,16 @@ namespace Avalon
                     }
                     else if (item.IsLua && !string.IsNullOrWhiteSpace(item.ProcessedCommand))
                     {
-                        // If it has text and it IS lua, send it to the LUA engine.
-                        _ = await Interp.ScriptHost.MoonSharp.ExecuteAsync<object>(item.ProcessedCommand);
+                        // Not sure why the try/catch calling CheckTriggers wasn't catching Lua errors.
+                        try
+                        {
+                            // If it has text and it IS lua, send it to the LUA engine.
+                            _ = await Interp.ScriptHost.MoonSharp.ExecuteAsync<object>(item.ProcessedCommand);
+                        }
+                        catch (Exception ex)
+                        {
+                            App.Conveyor.EchoError(ex.Message);
+                        }
                     }
 
                     // Check if we're supposed to move this line somewhere else.
