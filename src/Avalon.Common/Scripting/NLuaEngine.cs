@@ -168,5 +168,15 @@ namespace Avalon.Common.Scripting
         {
             throw new NotImplementedException();
         }
+
+        public ValidationResult Validate(string code)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ValidationResult> ValidateAsync(string code)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

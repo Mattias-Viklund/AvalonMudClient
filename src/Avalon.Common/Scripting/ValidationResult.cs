@@ -9,12 +9,12 @@
 
 using MoonSharp.Interpreter;
 
-namespace Avalon.Lua
+namespace Avalon.Common.Scripting
 {
     /// <summary>
-    /// A result from Lua code that was validated.
+    /// A result from script code that was validated.
     /// </summary>
-    public class LuaValidationResult
+    public class ValidationResult
     {
 
         public bool Success { get; set; }

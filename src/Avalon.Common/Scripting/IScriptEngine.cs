@@ -87,6 +87,18 @@ namespace Avalon.Common.Scripting
         Task<T> ExecuteStaticAsync<T>(string code);
 
         /// <summary>
+        /// Validates the code against against the implementing script engine.
+        /// </summary>
+        /// <param name="code"></param>
+        ValidationResult Validate(string code);
+
+        /// <summary>
+        /// Validates the code against against the implementing script engine.
+        /// </summary>
+        /// <param name="code"></param>
+        Task<ValidationResult> ValidateAsync(string code);
+
+        /// <summary>
         /// Executes the scripting languages garbage collecting feature if it exists.  As an
         /// example, MoonSharp's Lua interpreter uses the default .NET GC while NLua defers
         /// to the native Lua garbage collection.

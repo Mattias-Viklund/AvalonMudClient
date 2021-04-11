@@ -352,5 +352,103 @@ namespace Avalon.Common.Scripting
 
             return ret.ToObject<T>();
         }
+
+        /// <summary>
+        /// Validates Lua code for potential syntax errors but does not execute it.
+        /// </summary>
+        /// <param name="luaCode"></param>
+        public ValidationResult Validate(string luaCode)
+        {
+            if (string.IsNullOrWhiteSpace(luaCode))
+            {
+                return new ValidationResult
+                {
+                    Success = true
+                };
+            }
+
+            try
+            {
+                // Setup Lua
+                var lua = new Script
+                {
+                    Options = { CheckThreadAccess = false }
+                };
+
+                // Dynamic types from plugins.  These are created when they are registered and only need to be
+                // added into globals here for use.
+                foreach (var item in this.SharedObjects)
+                {
+                    lua.Globals.Set(item.Key, (DynValue)item.Value);
+                }
+
+                // Set the global variables that are specifically only available in Lua.
+                lua.Globals["global"] = this.GlobalVariables;
+
+                lua.LoadString(luaCode);
+
+                return new ValidationResult
+                {
+                    Success = true
+                };
+            }
+            catch (SyntaxErrorException ex)
+            {
+                return new ValidationResult
+                {
+                    Success = false,
+                    Exception = ex
+                };
+            }
+        }
+
+        /// <summary>
+        /// Validates Lua code for potential syntax errors but does not execute it.
+        /// </summary>
+        /// <param name="luaCode"></param>
+        public async Task<ValidationResult> ValidateAsync(string luaCode)
+        {
+            if (string.IsNullOrWhiteSpace(luaCode))
+            {
+                return new ValidationResult
+                {
+                    Success = true
+                };
+            }
+
+            try
+            {
+                // Setup Lua
+                var lua = new Script
+                {
+                    Options = { CheckThreadAccess = false }
+                };
+
+                // Dynamic types from plugins.  These are created when they are registered and only need to be
+                // added into globals here for use.
+                foreach (var item in this.SharedObjects)
+                {
+                    lua.Globals.Set(item.Key, (DynValue)item.Value);
+                }
+
+                // Set the global variables that are specifically only available in Lua.
+                lua.Globals["global"] = this.GlobalVariables;
+
+                await lua.LoadStringAsync(luaCode);
+
+                return new ValidationResult
+                {
+                    Success = true
+                };
+            }
+            catch (SyntaxErrorException ex)
+            {
+                return new ValidationResult
+                {
+                    Success = false,
+                    Exception = ex
+                };
+            }
+        }
     }
 }

@@ -17,7 +17,7 @@ namespace Avalon.Common.Scripting
         /// <summary>
         /// An object for thread locking access to resources.
         /// </summary>
-        private object _lockObject = new object();
+        private object _lockObject = new();
 
         private int _scriptsActive = 0;
 
