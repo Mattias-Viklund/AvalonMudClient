@@ -176,16 +176,15 @@ namespace Avalon
                     }
                     else if (item.IsLua && !string.IsNullOrWhiteSpace(item.ProcessedCommand))
                     {
-                        // Not sure why the try/catch calling CheckTriggers wasn't catching Lua errors.
+                        // Not sure why the try/catch calling CheckTriggers wasn't catching Lua errors.  Eat
+                        // the error here and allow the script host to process it's exception handler which will
+                        // echo it to the terminal.
                         try
                         {
                             // If it has text and it IS lua, send it to the LUA engine.
                             _ = await Interp.ScriptHost.MoonSharp.ExecuteAsync<object>(item.ProcessedCommand);
                         }
-                        catch (Exception ex)
-                        {
-                            App.Conveyor.EchoError(ex.Message);
-                        }
+                        catch { }
                     }
 
                     // Check if we're supposed to move this line somewhere else.
