@@ -103,6 +103,12 @@ namespace Avalon.Common.Scripting
             });
         }
 
+        /// <inheritdoc cref="LoadFunction"/>
+        public void LoadFunction(string functionName, string code)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc cref="Execute{T}"/>
         public T Execute<T>(string code)
         {
@@ -146,13 +152,13 @@ namespace Avalon.Common.Scripting
         }
 
         /// <inheritdoc cref="ExecuteFunctionAsync{T}"/>
-        public Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args)
+        public Task<T> ExecuteFunctionAsync<T>(string functionName, params string[] args)
         {
             throw new NotImplementedException();
         }
 
         /// <inheritdoc cref="ExecuteFunction{T}"/>
-        public T ExecuteFunction<T>(string functionName, string code, params string[] args)
+        public T ExecuteFunction<T>(string functionName, params string[] args)
         {
             throw new NotImplementedException();
         }

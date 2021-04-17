@@ -125,6 +125,46 @@ namespace Avalon.Common.Scripting
             GC.Collect(2, GCCollectionMode.Forced);
         }
 
+        /// <summary>
+        /// Loads a function into all available script objects in the <see cref="MemoryPool"/>.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="functionName">The name of the function to call.</param>
+        /// <param name="code">The Lua code to load.</param>
+        public void LoadFunction(string functionName, string code)
+        {
+            if (string.IsNullOrWhiteSpace(functionName) || string.IsNullOrWhiteSpace(code))
+            {
+                return;
+            }
+
+            try
+            {
+                this.MemoryPool.InvokeAll((script) =>
+                {
+                    // See if the function exists, if it doesn't, we will load it based off of the code provided.
+                    DynValue fnc = script.Globals.Get(functionName);
+
+                    if (fnc.IsNil())
+                    {
+                        // The function doesn't exist, execute the code to load it
+                        _ = script.DoString(code, codeFriendlyName: functionName);
+                    }
+                    else
+                    {
+                        // The function did exist, unload and then reload it.
+                        script.Globals.Remove(functionName);
+                        _ = script.DoString(code, codeFriendlyName: functionName);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                this?.ExceptionHandler(ex);
+                throw;
+            }
+        }
+
         /// <inheritdoc cref="Execute{T}"/>
         public T Execute<T>(string code)
         {
@@ -136,7 +176,7 @@ namespace Avalon.Common.Scripting
             // Gets a new or used but ready instance of the a Lua object to use.
             var lua = MemoryPool.Get();
             DynValue ret;
-
+            
             try
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
@@ -195,7 +235,7 @@ namespace Avalon.Common.Scripting
         /// <param name="functionName">The name of the function to call.</param>
         /// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
         /// <param name="args">Any param arguments to pass to the function.</param>
-        public async Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args)
+        public async Task<T> ExecuteFunctionAsync<T>(string functionName, params string[] args)
         {
             // Gets a new or used but ready instance of the a Lua object to use.
             var lua = MemoryPool.Get();
@@ -205,17 +245,10 @@ namespace Avalon.Common.Scripting
 
             var ec = new ExecutionControlToken();
 
-            // If the function doesn't exist report the error and get out.  The caller should have
-            // loaded the function already.
+            // If the function doesn't exist report the error and get out.
             if (fnc.IsNil())
             {
-                if (string.IsNullOrWhiteSpace(code))
-                {
-                    return DynValue.Nil.ToObject<T>();
-                }
-
-                _ = await lua.DoStringAsync(ec, code, codeFriendlyName: functionName);
-                fnc = lua.Globals.Get(functionName);
+                throw new Exception($"Function '{functionName}' was not loaded.");
             }
 
             DynValue ret;
@@ -246,7 +279,7 @@ namespace Avalon.Common.Scripting
         /// <param name="functionName">The name of the function to call.</param>
         /// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
         /// <param name="args">Any param arguments to pass to the function.</param>
-        public T ExecuteFunction<T>(string functionName, string code, params string[] args)
+        public T ExecuteFunction<T>(string functionName, params string[] args)
         {
             // Gets a new or used but ready instance of the a Lua object to use.
             var lua = MemoryPool.Get();
@@ -254,17 +287,10 @@ namespace Avalon.Common.Scripting
             // See if the function exists, if it doesn't, we will load it based off of the code provided.
             DynValue fnc = lua.Globals.Get(functionName);
 
-            // If the function doesn't exist report the error and get out.  The caller should have
-            // loaded the function already.
+            // If the function doesn't exist report the error and get out.
             if (fnc.IsNil())
             {
-                if (string.IsNullOrWhiteSpace(code))
-                {
-                    return DynValue.Nil.ToObject<T>();
-                }
-
-                _ = lua.DoString(code, codeFriendlyName: functionName);
-                fnc = lua.Globals.Get(functionName);
+                throw new Exception($"Function '{functionName}' was not loaded.");
             }
 
             DynValue ret;
