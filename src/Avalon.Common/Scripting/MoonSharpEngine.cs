@@ -37,6 +37,11 @@ namespace Avalon.Common.Scripting
         public Action<Exception> ExceptionHandler { get; set; }
 
         /// <summary>
+        /// The list of functions and code which have been loaded into this environment.
+        /// </summary>
+        public Dictionary<string, string> Functions { get; set; } = new();
+
+        /// <summary>
         /// <inheritdoc cref="ScriptHost"/>
         /// </summary>
         public ScriptHost ScriptHost { get; set; }
@@ -82,6 +87,11 @@ namespace Avalon.Common.Scripting
 
             // Set the global variables that are specifically only available in Lua.
             script.Globals["global"] = this.GlobalVariables;
+
+            foreach (var func in this.Functions)
+            {
+                script.DoString(func.Value, codeFriendlyName: func.Key);
+            }
         }
 
         /// <inheritdoc cref="RegisterObject{T}"/>
@@ -128,7 +138,6 @@ namespace Avalon.Common.Scripting
         /// <summary>
         /// Loads a function into all available script objects in the <see cref="MemoryPool"/>.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="functionName">The name of the function to call.</param>
         /// <param name="code">The Lua code to load.</param>
         public void LoadFunction(string functionName, string code)
@@ -156,6 +165,10 @@ namespace Avalon.Common.Scripting
                         script.Globals.Remove(functionName);
                         _ = script.DoString(code, codeFriendlyName: functionName);
                     }
+
+                    // Only add this function if it ran successfully since it will be used in
+                    // other pooled script objects.
+                    this.Functions[functionName] = code;
                 });
             }
             catch (Exception ex)
@@ -176,7 +189,7 @@ namespace Avalon.Common.Scripting
             // Gets a new or used but ready instance of the a Lua object to use.
             var lua = MemoryPool.Get();
             DynValue ret;
-            
+
             try
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
@@ -252,7 +265,7 @@ namespace Avalon.Common.Scripting
             }
 
             DynValue ret;
-            
+
             try
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
