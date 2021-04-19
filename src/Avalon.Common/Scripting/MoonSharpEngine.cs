@@ -122,6 +122,7 @@ namespace Avalon.Common.Scripting
         /// <inheritdoc cref="Reset"/>
         public void Reset()
         {
+            this.Functions.Clear();
             MemoryPool.Clear();
             this.GlobalVariables = new MoonSharpGlobalVariables();
         }
