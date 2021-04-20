@@ -26,20 +26,27 @@ namespace Avalon.Utilities
     public static class Utilities
     {
         /// <summary>
-        /// Sets all triggers up with the Conveyor from the MainWindow if they haven't been wired up already.
+        /// Sets all triggers up with the Conveyor and ScriptHost from the MainWindow if they haven't been wired up already.
         /// </summary>
-        public static void TriggerConveyorSetup()
+        public static void TriggerSetup()
         {
-            if (App.Settings?.ProfileSettings?.TriggerList == null)
+            if (App.Settings?.ProfileSettings?.TriggerList != null)
             {
-                return;
+                foreach (var trigger in App.Settings.ProfileSettings.TriggerList)
+                {
+                    if (trigger.Conveyor == null && App.Conveyor != null)
+                    {
+                        trigger.Conveyor = App.Conveyor;
+                    }
+                }
             }
 
-            foreach (var trigger in App.Settings.ProfileSettings.TriggerList)
+            if (App.Settings?.ProfileSettings?.ReplacementTriggerList != null)
             {
-                if (trigger.Conveyor == null && App.Conveyor != null)
+                foreach (var trigger in App.Settings.ProfileSettings.ReplacementTriggerList)
                 {
-                    trigger.Conveyor = App.Conveyor;
+                    trigger.ScriptHost = App.MainWindow.Interp.ScriptHost;
+                    trigger.LoadScript();
                 }
             }
         }

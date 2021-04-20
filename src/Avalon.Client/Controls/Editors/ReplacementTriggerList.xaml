@@ -33,6 +33,7 @@
                       EnableColumnVirtualization="True"
                       SelectionMode="Single"
                       EnableRowVirtualization="True"
+                      CellEditEnding="DataList_OnCellEditEnding"
                       VirtualizingStackPanel.IsVirtualizing="True"
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       SelectionChanged="DataList_OnSelectionChanged">

@@ -271,7 +271,7 @@ namespace Avalon
             {
                 bool found = false;
                 var sb2 = ZString.CreateStringBuilder();
-
+                
                 foreach (var trigger in App.Settings.ProfileSettings.ReplacementTriggerList)
                 {
                     if (!trigger.Enabled)
@@ -309,7 +309,7 @@ namespace Avalon
                                 var sb = Argus.Memory.StringBuilderPool.Take();
                                 sb.Append(trigger.OnMatchEvent);
 
-                                var paramList = new string[match.Groups.Count + 1];
+                                //var paramList = new string[match.Groups.Count + 1];
                                 sb.Replace("%0", line.Text);
 
                                 for (int i = 1; i < match.Groups.Count; i++)
@@ -317,15 +317,16 @@ namespace Avalon
                                     sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
                                 }
 
-                                //var paramList = new string[match.Groups.Count + 1];
-                                //paramList[0] = line.Text;
+                                var paramList = new string[match.Groups.Count];
+                                paramList[0] = line.Text;
 
-                                //for (int i = 1; i < match.Groups.Count; i++)
-                                //{
-                                //    paramList[i] = match.Groups[i].Value;
-                                //}
+                                for (int i = 1; i < match.Groups.Count; i++)
+                                {
+                                    paramList[i] = match.Groups[i].Value;
+                                }
 
-                                string luaResult = Interp.ScriptHost.MoonSharp.Execute<string>(sb.ToString());
+                                //string luaResult = Interp.ScriptHost.MoonSharp.Execute<string>(sb.ToString());
+                                string luaResult = Interp.ScriptHost.MoonSharp.ExecuteFunction<string>(trigger.FunctionName, paramList);
 
                                 if (!string.IsNullOrEmpty(luaResult))
                                 {

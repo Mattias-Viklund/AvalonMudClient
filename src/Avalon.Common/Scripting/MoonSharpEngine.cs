@@ -166,11 +166,11 @@ namespace Avalon.Common.Scripting
                         script.Globals.Remove(functionName);
                         _ = script.DoString(code, codeFriendlyName: functionName);
                     }
-
-                    // Only add this function if it ran successfully since it will be used in
-                    // other pooled script objects.
-                    this.Functions[functionName] = code;
                 });
+
+                // When these are loaded from the get go there maybe nothing in the memory pool to run
+                // this against yet.  We will save this, but it could have errors associated with it.
+                this.Functions[functionName] = code;
             }
             catch (Exception ex)
             {

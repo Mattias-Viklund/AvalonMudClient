@@ -120,5 +120,15 @@ namespace Avalon.Controls
                 LuaEditor.Editor.Text = !string.IsNullOrWhiteSpace(v.OnMatchEvent) ? v.OnMatchEvent : string.Empty;
             }
         }
+
+        /// <summary>
+        /// When the cell edit is ending setup all of the triggers.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DataList_OnCellEditEnding(object? sender, DataGridCellEditEndingEventArgs e)
+        {
+            Utilities.Utilities.TriggerSetup();
+        }
     }
 }

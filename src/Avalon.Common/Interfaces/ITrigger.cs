@@ -129,6 +129,5 @@ namespace Avalon.Common.Interfaces
         /// a script engine or even to a file).
         /// </summary>
         public ExecuteType ExecuteAs { get; set; }
-
     }
 }

@@ -13,6 +13,7 @@ using System;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using Argus.Extensions;
+using Avalon.Common.Scripting;
 using Avalon.Lua;
 using Cysharp.Text;
 
@@ -30,6 +31,7 @@ namespace Avalon.Common.Triggers
             set
             {
                 _id = value;
+                this.FunctionName = string.Concat("x", value.Replace("-", "").DeleteLeft(1));
                 OnPropertyChanged(nameof(Id));
             }
         }
@@ -83,6 +85,26 @@ namespace Avalon.Common.Triggers
             }
         }
 
+        /// <summary>
+        /// Loads the script into the scripting environment.
+        /// </summary>
+        public void LoadScript()
+        {
+            if (this.ScriptHost == null)
+            {
+                throw new Exception("ScriptHost was null.");
+            }
+
+            var sb = Argus.Memory.StringBuilderPool.Take();
+            sb.AppendFormat("function {0}(...)\n", this.FunctionName);
+            sb.Append(this.OnMatchEvent);
+            sb.Append("\nend");
+
+            this.ScriptHost.MoonSharp.LoadFunction(this.FunctionName, sb.ToString());
+
+            Argus.Memory.StringBuilderPool.Return(sb);
+        }
+
         /// <inheritdoc />
         [JsonIgnore]
         public string ProcessedReplacement { get; set; }
@@ -122,17 +144,15 @@ namespace Avalon.Common.Triggers
             set
             {
                 _onMatchEvent = value;
-
-                if (this.LuaScript == null)
-                {
-                    this.LuaScript = new LuaScript(this.Id);
-                }
-
-                this.LuaScript.Code = value;
-                this.LuaScript.Updated = true;
                 OnPropertyChanged(nameof(OnMatchEvent));
             }
         }
+
+        /// <summary>
+        /// The name of the function for the OnMatchedEvent.
+        /// </summary>
+        [JsonIgnore]
+        public string FunctionName { get; set; }
 
         private bool _temp = false;
 
@@ -148,10 +168,10 @@ namespace Avalon.Common.Triggers
         }
 
         /// <summary>
-        /// Represents a Lua script object.
+        /// A reference to the scripting environment.
         /// </summary>
         [JsonIgnore]
-        public LuaScript LuaScript { get; set; }
+        public ScriptHost ScriptHost { get; set; }
 
         /// <summary>
         /// The RegEx compiled and used for this triggers pattern matching.
