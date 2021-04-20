@@ -143,6 +143,7 @@ namespace Avalon.Common.Triggers
             get => _onMatchEvent;
             set
             {
+                // TODO - Load script
                 _onMatchEvent = value;
                 OnPropertyChanged(nameof(OnMatchEvent));
             }
