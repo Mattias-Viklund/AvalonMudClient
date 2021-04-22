@@ -13,7 +13,6 @@ using Avalon.Common.Colors;
 using Avalon.Common.Models;
 using System;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,39 +27,6 @@ namespace Avalon.Extensions
     /// </summary>
     public static class ExtensionMethods
     {
-        /// <summary>
-        /// Returns a true or false with a null value returned as a false.
-        /// </summary>
-        /// <param name="match"></param>
-        public static bool TrySuccess(this Match match)
-        {
-            return (match?.Success ?? false);
-        }
-
-        /// <summary>
-        /// Removes all line endings from a string using a char array for performance vs.
-        /// a string replace.
-        /// </summary>
-        /// <param name="s"></param>
-        public static string RemoveLineEndings(this string s)
-        {
-            int len = s.Length;
-            char[] output = new char[len];
-            int i2 = 0;
-
-            for (int i = 0; i < len; i++)
-            {
-                char c = s[i];
-
-                if (c != '\r' && c != '\n')
-                {
-                    output[i2++] = c;
-                }
-            }
-
-            return new string(output, 0, i2);
-        }
-
         /// <summary>
         /// Returns visibility to visible or collapsed (does not reserves space) if not visible.
         /// </summary>
@@ -370,12 +336,15 @@ namespace Avalon.Extensions
             catch
             {
                 // Task was canceled
-                c.Background = Brushes.White;
+                if (c != null)
+                {
+                    c.Background = Brushes.White;
+                }
+
                 return;
             }
 
             await tcs.Task;
         }
     }
-
 }

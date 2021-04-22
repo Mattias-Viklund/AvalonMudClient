@@ -46,7 +46,6 @@ namespace Avalon.Utilities
                 foreach (var trigger in App.Settings.ProfileSettings.ReplacementTriggerList)
                 {
                     trigger.ScriptHost = App.MainWindow.Interp.ScriptHost;
-                    trigger.LoadScript();
                 }
             }
         }

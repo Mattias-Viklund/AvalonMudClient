@@ -39,7 +39,7 @@ namespace Avalon.Common.Scripting
         /// <summary>
         /// The list of functions and code which have been loaded into this environment.
         /// </summary>
-        public Dictionary<string, string> Functions { get; set; } = new();
+        public Dictionary<string, SourceCode> Functions { get; set; } = new();
 
         /// <summary>
         /// <inheritdoc cref="ScriptHost"/>
@@ -88,9 +88,25 @@ namespace Avalon.Common.Scripting
             // Set the global variables that are specifically only available in Lua.
             script.Globals["global"] = this.GlobalVariables;
 
-            foreach (var func in this.Functions)
+            try
             {
-                script.DoString(func.Value, codeFriendlyName: func.Key);
+                // When loading every function, we don't want a syntax error in one function messing up
+                // another, although having exceptions thrown will be costly. :/
+                foreach (var func in this.Functions)
+                {
+                    var sb = StringBuilderPool.Take();
+                    sb.AppendFormat("function {0}(...)\n", func.Key);
+                    sb.Append(func.Value.Code);
+                    sb.Append("\nend");
+
+                    _ = script.DoString(sb.ToString(), codeFriendlyName: func.Key);
+
+                    StringBuilderPool.Return(sb);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
 
@@ -137,40 +153,76 @@ namespace Avalon.Common.Scripting
         }
 
         /// <summary>
+        /// Whether a function exists or not in the <see cref="Script"/> or not.
+        /// </summary>
+        /// <param name="lua"></param>
+        /// <param name="functionName"></param>
+        private bool FunctionExists(Script lua, string functionName)
+        {
+            return !lua.Globals.Get(functionName).IsNil();
+        }
+
+        /// <summary>
         /// Loads a function into all available script objects in the <see cref="MemoryPool"/>.
         /// </summary>
         /// <param name="functionName">The name of the function to call.</param>
         /// <param name="code">The Lua code to load.</param>
         public void LoadFunction(string functionName, string code)
         {
+            bool update;
+
             if (string.IsNullOrWhiteSpace(functionName) || string.IsNullOrWhiteSpace(code))
             {
                 return;
             }
 
+            // Check if the function has already been loaded and if it's the same copy.  If it is
+            // then we can ditch out of this early.
+            if (this.Functions.ContainsKey(functionName))
+            {
+                string md5 = Argus.Cryptography.HashUtilities.MD5Hash(code);
+
+                if (string.Equals(md5, this.Functions[functionName].Md5Hash))
+                {
+                    return;
+                }
+
+                update = true;
+            }
+            else
+            {
+                update = false;
+            }
+
             try
             {
+                // Init one new script so the memory pool has something to load the function on.
+                if (this.MemoryPool.Count() == 0)
+                {
+                    var lua = this.MemoryPool.Get();
+                    this.MemoryPool.Return(lua);
+                }
+
                 this.MemoryPool.InvokeAll((script) =>
                 {
-                    // See if the function exists, if it doesn't, we will load it based off of the code provided.
-                    DynValue fnc = script.Globals.Get(functionName);
-
-                    if (fnc.IsNil())
-                    {
-                        // The function doesn't exist, execute the code to load it
-                        _ = script.DoString(code, codeFriendlyName: functionName);
-                    }
-                    else
-                    {
-                        // The function did exist, unload and then reload it.
+                    if (update)
+                    { 
                         script.Globals.Remove(functionName);
-                        _ = script.DoString(code, codeFriendlyName: functionName);
                     }
+
+                    var sb = StringBuilderPool.Take();
+                    sb.AppendFormat("function {0}(...)\n", functionName);
+                    sb.Append(code);
+                    sb.Append("\nend");
+
+                    _ = script.DoString(sb.ToString(), codeFriendlyName: functionName);
+
+                    StringBuilderPool.Return(sb);
                 });
 
                 // When these are loaded from the get go there maybe nothing in the memory pool to run
                 // this against yet.  We will save this, but it could have errors associated with it.
-                this.Functions[functionName] = code;
+                this.Functions[functionName] = new SourceCode(code);
             }
             catch (Exception ex)
             {
@@ -291,20 +343,99 @@ namespace Avalon.Common.Scripting
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="functionName">The name of the function to call.</param>
-        /// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
         /// <param name="args">Any param arguments to pass to the function.</param>
         public T ExecuteFunction<T>(string functionName, params string[] args)
         {
+            return ExecuteFunction<T>(functionName, "", args);
+        }
+
+        ///// <summary>
+        ///// Executes a function.  If the function isn't stored a copy will be loaded.
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <param name="functionName">The name of the function to call.</param>
+        ///// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
+        ///// <param name="args">Any param arguments to pass to the function.</param>
+        //public T ExecuteFunction<T>(string functionName, string code, params string[] args)
+        //{
+        //    // Gets a new or used but ready instance of the a Lua object to use.
+        //    var lua = MemoryPool.Get();
+
+        //    // See if the function exists, if it doesn't, we will load it based off of the code provided.
+        //    DynValue fnc = lua.Globals.Get(functionName);
+
+        //    // If the function doesn't exist load it with the code provided.
+        //    if (fnc.IsNil())
+        //    {
+        //        try
+        //        {
+        //            this.ScriptHost.Statistics.ScriptsActive++;
+        //            _ = lua.DoString(code, codeFriendlyName: functionName);
+        //            fnc = lua.Globals.Get(functionName);
+
+        //            if (fnc.IsNil())
+        //            {
+        //                throw new Exception($"Function '{functionName}' was not loaded.");
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            this?.ExceptionHandler(ex);
+        //            throw;
+        //        }
+        //        finally
+        //        {
+        //            this.ScriptHost.Statistics.ScriptsActive--;
+        //            MemoryPool.Return(lua);
+        //        }
+        //    }
+
+        //    DynValue ret;
+
+        //    try
+        //    {
+        //        this.ScriptHost.Statistics.ScriptsActive++;
+        //        ret = lua.Call(fnc, args);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        this?.ExceptionHandler(ex);
+        //        throw;
+        //    }
+        //    finally
+        //    {
+        //        this.ScriptHost.Statistics.ScriptsActive--;
+        //        MemoryPool.Return(lua);
+        //    }
+
+        //    return ret.ToObject<T>();
+        //}
+
+        /// <summary>
+        /// Executes a function.  If the function isn't stored a copy will be loaded.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="functionName">The name of the function to call.</param>
+        /// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
+        /// <param name="args">Any param arguments to pass to the function.</param>
+        public T ExecuteFunction<T>(string functionName, string code, params string[] args)
+        {
+            this.LoadFunction(functionName, code);
+
             // Gets a new or used but ready instance of the a Lua object to use.
             var lua = MemoryPool.Get();
 
-            // See if the function exists, if it doesn't, we will load it based off of the code provided.
+            // Get the function reference.
             DynValue fnc = lua.Globals.Get(functionName);
 
-            // If the function doesn't exist report the error and get out.
+            // If the function doesn't exist load it with the code provided.
             if (fnc.IsNil())
             {
-                throw new Exception($"Function '{functionName}' was not loaded.");
+                var notFoundException = new Exception($"Function '{functionName}' was not loaded.");
+                this?.ExceptionHandler(notFoundException);
+                MemoryPool.Return(lua);
+
+                throw notFoundException;
             }
 
             DynValue ret;

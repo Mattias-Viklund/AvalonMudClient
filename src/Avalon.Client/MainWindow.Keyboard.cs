@@ -7,11 +7,11 @@
  * @license           : MIT
  */
 
+using Argus.Extensions;
 using Avalon.Controls;
 using ModernWpf;
-using System.Windows.Input;
-using Avalon.Extensions;
 using System.Linq;
+using System.Windows.Input;
 
 namespace Avalon
 {

@@ -166,7 +166,7 @@ namespace Avalon.Common.Settings
                     this.ProfileSettings.FileName = Path.GetFileName(settingsFile);
                     this.AvalonSettings.LastLoadedProfilePath = settingsFile;
                 }
-                catch
+                catch (Exception ex)
                 {
                     // No file or an error, default back to the safe storage location.
                     this.ProfileSettings = new ProfileSettings();

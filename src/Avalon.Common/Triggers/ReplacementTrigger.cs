@@ -85,26 +85,6 @@ namespace Avalon.Common.Triggers
             }
         }
 
-        /// <summary>
-        /// Loads the script into the scripting environment.
-        /// </summary>
-        public void LoadScript()
-        {
-            if (this.ScriptHost == null)
-            {
-                throw new Exception("ScriptHost was null.");
-            }
-
-            var sb = Argus.Memory.StringBuilderPool.Take();
-            sb.AppendFormat("function {0}(...)\n", this.FunctionName);
-            sb.Append(this.OnMatchEvent);
-            sb.Append("\nend");
-
-            this.ScriptHost.MoonSharp.LoadFunction(this.FunctionName, sb.ToString());
-
-            Argus.Memory.StringBuilderPool.Return(sb);
-        }
-
         /// <inheritdoc />
         [JsonIgnore]
         public string ProcessedReplacement { get; set; }
@@ -143,7 +123,7 @@ namespace Avalon.Common.Triggers
             get => _onMatchEvent;
             set
             {
-                // TODO - Load script
+                // Additionally load the script when this is changed.
                 _onMatchEvent = value;
                 OnPropertyChanged(nameof(OnMatchEvent));
             }

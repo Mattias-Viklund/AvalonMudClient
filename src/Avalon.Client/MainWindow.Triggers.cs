@@ -9,12 +9,11 @@
 
 using System;
 using System.Linq;
+using Argus.Extensions;
 using Avalon.Colors;
 using Avalon.Common.Colors;
 using Avalon.Common.Models;
-using Avalon.Extensions;
 using Cysharp.Text;
-using MoonSharp.Interpreter;
 
 namespace Avalon
 {
@@ -306,16 +305,16 @@ namespace Avalon
                             try
                             {
                                 // Create our param list to pass to the cached Lua function.
-                                var sb = Argus.Memory.StringBuilderPool.Take();
-                                sb.Append(trigger.OnMatchEvent);
+                                //var sb = Argus.Memory.StringBuilderPool.Take();
+                                //sb.Append(trigger.OnMatchEvent);
 
-                                //var paramList = new string[match.Groups.Count + 1];
-                                sb.Replace("%0", line.Text);
+                                ////var paramList = new string[match.Groups.Count + 1];
+                                //sb.Replace("%0", line.Text);
 
-                                for (int i = 1; i < match.Groups.Count; i++)
-                                {
-                                    sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
-                                }
+                                //for (int i = 1; i < match.Groups.Count; i++)
+                                //{
+                                //    sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
+                                //}
 
                                 var paramList = new string[match.Groups.Count];
                                 paramList[0] = line.Text;
@@ -326,7 +325,7 @@ namespace Avalon
                                 }
 
                                 //string luaResult = Interp.ScriptHost.MoonSharp.Execute<string>(sb.ToString());
-                                string luaResult = Interp.ScriptHost.MoonSharp.ExecuteFunction<string>(trigger.FunctionName, paramList);
+                                string luaResult = Interp.ScriptHost.MoonSharp.ExecuteFunction<string>(trigger.FunctionName, trigger.OnMatchEvent, paramList);
 
                                 if (!string.IsNullOrEmpty(luaResult))
                                 {

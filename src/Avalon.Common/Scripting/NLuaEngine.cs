@@ -74,6 +74,19 @@ namespace Avalon.Common.Scripting
         /// <param name="prefix"></param>
         public void RegisterObject<T>(Type t, object item, string prefix)
         {
+            // Registering any object forces the memory pool to clear since those objects
+            // will need to be loaded
+            if (MemoryPool.Count() > 0)
+            {
+                MemoryPool.Clear();
+            }
+
+            // Only add the type in if it hasn't been added previously.
+            if (item == null || this.SharedObjects.ContainsKey(prefix))
+            {
+                return;
+            }
+
             this.SharedObjects.Add(prefix, item);
         }
 
@@ -157,7 +170,13 @@ namespace Avalon.Common.Scripting
             throw new NotImplementedException();
         }
 
-        /// <inheritdoc cref="ExecuteFunction{T}"/>
+        /// <inheritdoc cref="ExecuteFunction{T}(string,string,string[])"/>
+        public T ExecuteFunction<T>(string functionName, string code, params string[] args)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc cref="ExecuteFunction{T}(string,string[])"/>
         public T ExecuteFunction<T>(string functionName, params string[] args)
         {
             throw new NotImplementedException();

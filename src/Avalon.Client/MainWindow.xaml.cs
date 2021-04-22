@@ -554,6 +554,8 @@ namespace Avalon
                     // Load the settings for the file that was selected.
                     this.LoadSettings(dialog.FileName);
 
+                    Utilities.Utilities.TriggerSetup();
+
                     // Inject the Conveyor into the Triggers.
                     foreach (var trigger in App.Settings.ProfileSettings.TriggerList)
                     {
@@ -579,6 +581,7 @@ namespace Avalon
             catch (Exception ex)
             {
                 this.Interp.Conveyor.EchoError($"{ex.Message}.\r\n");
+                this.Interp.Conveyor.EchoError($"{ex.StackTrace}\r\n");
             }
         }
 
