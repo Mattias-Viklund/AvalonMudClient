@@ -82,7 +82,10 @@ namespace Avalon.Common.Scripting
             // added into globals here for use.
             foreach (var item in this.SharedObjects)
             {
-                script.Globals.Set(item.Key, (DynValue)item.Value);
+                if (script.Globals.Get(item.Key).IsNil())
+                {
+                    script.Globals.Set(item.Key, (DynValue)item.Value);
+                }
             }
 
             // Set the global variables that are specifically only available in Lua.
@@ -113,26 +116,32 @@ namespace Avalon.Common.Scripting
         /// <inheritdoc cref="RegisterObject{T}"/>
         public void RegisterObject<T>(Type t, object item, string prefix)
         {
-            // Registering any object forces the memory pool to clear since those objects
-            // will need to be loaded
-            if (MemoryPool.Count() > 0)
-            {
-                MemoryPool.Clear();
-            }
-
-            // Only add the type in if it hasn't been added previously.
-            if (item == null || this.SharedObjects.ContainsKey(prefix))
-            {
-                return;
-            }
-
             // Register the type if it's not already registered.
             if (!UserData.IsTypeRegistered(t))
             {
                 UserData.RegisterType(t);
             }
 
-            this.SharedObjects.Add(prefix, UserData.Create(item));
+            // Only add the type in if it hasn't been added previously.  This must occur
+            // after the type is registered.
+            if (item != null && !this.SharedObjects.ContainsKey(prefix))
+            {
+                this.SharedObjects.Add(prefix, UserData.Create(item));
+            }
+
+            // Dynamic types from plugins that need to be added into anything currently
+            // in the MemoryPool.  They will be added when new MemoryPool items are
+            // initialized.
+            this.MemoryPool.InvokeAll((script) =>
+            {
+                foreach (var item in this.SharedObjects)
+                {
+                    if (script.Globals.Get(item.Key).IsNil())
+                    {
+                        script.Globals.Set(item.Key, (DynValue)item.Value);
+                    }
+                }
+            });
         }
 
         /// <inheritdoc cref="Reset"/>
