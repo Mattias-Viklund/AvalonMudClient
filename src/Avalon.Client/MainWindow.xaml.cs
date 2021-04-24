@@ -95,7 +95,7 @@ namespace Avalon
             this.StartupMessages();
 
             // The settings for the app load in the app startup, they will then try to load the last profile that was used.
-            App.Conveyor.EchoInfo($"Avalon Mud Client: Version {Assembly.GetExecutingAssembly()?.GetName()?.Version?.ToString() ?? "Unknown"}");
+            App.Conveyor.EchoInfo($"{{GA{{gvalon {{GM{{gud {{GC{{glient{{x: Version {Assembly.GetExecutingAssembly()?.GetName()?.Version?.ToString() ?? "Unknown"}");
 
             try
             {
@@ -167,6 +167,10 @@ namespace Avalon
 
                 // Pass the necessary reference from this page to the Interpreter.
                 Interp = new Interpreter(App.Conveyor);
+
+                // Populate the script engine's memory pool.
+                Interp.ScriptHost.MoonSharp.MemoryPool.Fill(5);
+                App.Conveyor.EchoInfo("{CM{coon{CS{charp{x Lua Memory Pool Initialized with 5/10 instances.");
 
                 // Inject the Conveyor into the Triggers so the Triggers know how to talk to the UI.  Not doing this
                 // causes ya know, problems.

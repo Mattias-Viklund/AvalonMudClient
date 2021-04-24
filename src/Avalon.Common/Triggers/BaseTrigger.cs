@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+using Argus.Extensions;
 
 namespace Avalon.Common.Triggers
 {
@@ -25,8 +26,22 @@ namespace Avalon.Common.Triggers
 
         public abstract void Execute();
 
+        private string _identifier = Guid.NewGuid().ToString();
+
         /// <inheritdoc />
-        public string Identifier { get; set; } = Guid.NewGuid().ToString();
+        public string Identifier
+        {
+            get
+            {
+                return _identifier;
+            }
+            set
+            {
+                this.FunctionName = string.Concat("x", value.Replace("-", "").DeleteLeft(1));
+                _identifier = value;
+                OnPropertyChanged(nameof(Identifier));
+            }
+        }
 
         private string _pattern = "";
 
@@ -187,6 +202,12 @@ namespace Avalon.Common.Triggers
 
         /// <inheritdoc/>
         public DateTime LastMatched { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// The name of the function for the OnMatchedEvent.
+        /// </summary>
+        [JsonIgnore]
+        public string FunctionName { get; set; }
 
         /// <inheritdoc />
         [JsonIgnore]

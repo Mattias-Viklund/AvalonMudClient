@@ -62,15 +62,22 @@ namespace Avalon
                     // Run any CLR that might exist.
                     item.Execute();
 
-                    if (!string.IsNullOrEmpty(item.Command) && item.ExecuteAs == ExecuteType.Command)
+                    if (item.ExecuteAs == ExecuteType.Command && !string.IsNullOrEmpty(item.Command))
                     {
                         // If it has text but it's not lua, send it to the interpreter.
                         await Interp.Send(item.Command, item.IsSilent, false);
                     }
-                    else if (!string.IsNullOrEmpty(item.Command) && (item.IsLua || item.ExecuteAs == ExecuteType.LuaMoonsharp))
+                    else if ((item.IsLua || item.ExecuteAs == ExecuteType.LuaMoonsharp) && !string.IsNullOrEmpty(item.Command))
                     {
-                        // If it has text and it IS lua, send it to the LUA engine.
-                        _ = Interp.ScriptHost.MoonSharp.ExecuteAsync<object>(item.Command);
+                        var paramList = new string[item.Match.Groups.Count];
+                        paramList[0] = line.Text;
+
+                        for (int i = 1; i < item.Match.Groups.Count; i++)
+                        {
+                            paramList[i] = item.Match.Groups[i].Value;
+                        }
+
+                        string luaResult = Interp.ScriptHost.MoonSharp.ExecuteFunction<string>(item.FunctionName, item.Command, paramList);
                     }
 
                     // Check if we're supposed to move this line somewhere else.
@@ -166,22 +173,32 @@ namespace Avalon
                         int start = GameTerminal.Document.Text.LastIndexOf(line.FormattedText, StringComparison.Ordinal);
                         GameTerminal.Document.Insert(start, AnsiColors.DarkCyan);
                     }
-
+                    
                     // Only send if it has something in it.  Use the processed command.
-                    if (!string.IsNullOrEmpty(item.ProcessedCommand) && !item.IsLua)
+                    if (item.ExecuteAs == ExecuteType.Command && !string.IsNullOrEmpty(item.ProcessedCommand))
                     {
                         // If it has text but it's not lua, send it to the interpreter.
                         await Interp.Send(item.ProcessedCommand, false, false);
                     }
-                    else if (item.IsLua && !string.IsNullOrWhiteSpace(item.ProcessedCommand))
+                    else if ((item.IsLua || item.ExecuteAs == ExecuteType.LuaMoonsharp) && !string.IsNullOrWhiteSpace(item.Command))
                     {
+                        var paramList = new string[item.Match.Groups.Count];
+                        paramList[0] = line.Text;
+
+                        for (int i = 1; i < item.Match.Groups.Count; i++)
+                        {
+                            paramList[i] = item.Match.Groups[i].Value;
+                        }
+
                         // Not sure why the try/catch calling CheckTriggers wasn't catching Lua errors.  Eat
                         // the error here and allow the script host to process it's exception handler which will
                         // echo it to the terminal.
                         try
                         {
-                            // If it has text and it IS lua, send it to the LUA engine.
-                            _ = await Interp.ScriptHost.MoonSharp.ExecuteAsync<object>(item.ProcessedCommand);
+                            // We'll send the function we want to call but also the code, if the code has changed
+                            // it nothing will be reloaded thus saving memory and calls.  This is why replacing %1
+                            // variables is problematic here and why we are forcing the use of Lua varargs (...)
+                            _ = await Interp.ScriptHost.MoonSharp.ExecuteFunctionAsync<object>(item.FunctionName, item.Command, paramList);
                         }
                         catch { }
                     }

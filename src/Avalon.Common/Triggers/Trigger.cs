@@ -113,9 +113,10 @@ namespace Avalon.Common.Triggers
             // Save the match for CLR processing if needed.
             this.Match = match;
 
-            // This is the block that swaps matched groups into the processed command as the user
-            // has requested (e.g. %0, %1, %2, %3, etc.)
             {
+                // This is the block that swaps matched groups into the processed command as the user
+                // has requested (e.g. %0, %1, %2, %3, etc.)
+
                 // Save the text that triggered this trigger so that it can be used if needed elsewhere like in
                 // a CLR trigger.
                 TriggeringText = line;

@@ -7,15 +7,10 @@
  * @license           : MIT
  */
 
-using System;
+using Argus.Extensions;
 using Avalon.Common.Interfaces;
 using CommandLine;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Argus.Extensions;
-using Avalon.Common.Scripting;
-using MoonSharp.Interpreter;
 
 namespace Avalon.HashCommands
 {
