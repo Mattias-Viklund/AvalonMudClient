@@ -69,6 +69,10 @@ namespace Avalon
                 }
             };
 
+            // Populate the script engine's memory pool.
+            this.ScriptHost.MoonSharp.MemoryPool.Fill(5);
+            App.Conveyor.EchoInfo("{CM{coon{CS{charp{x Lua Memory Pool Initialized with 5/10 instances.");
+
             this.ScriptHost.NLua.ExceptionHandler = (ex) =>
             {
                 if (ex is NLua.Exceptions.LuaException exLua)
@@ -311,26 +315,28 @@ namespace Avalon
                         // the replacements if the string contains a percent sign.
                         if (alias.Command.Contains("%", StringComparison.Ordinal))
                         {
-                            using (var sb = ZString.CreateStringBuilder())
-                            {
-                                sb.Append(alias.Command);
+                            // TODO alias expression as function name, starting with x
+                            _ = this.ScriptHost.MoonSharp.ExecuteFunctionAsync<object>(alias.AliasExpression, alias.Command, Array.Empty<string>());
+                            //using (var sb = ZString.CreateStringBuilder())
+                            //{
+                            //    sb.Append(alias.Command);
 
-                                // %0 will represent the entire matched string.
-                                sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
+                            //    // %0 will represent the entire matched string.
+                            //    sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
 
-                                // %1-%9
-                                for (int i = 1; i <= 9; i++)
-                                {
-                                    sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
-                                }
+                            //    // %1-%9
+                            //    for (int i = 1; i <= 9; i++)
+                            //    {
+                            //        sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
+                            //    }
 
-                                // This is all that's going to execute as it clears the list.. we can "fire and forget".
-                                this.ScriptHost.MoonSharp.ExecuteAsync<object>(sb.ToString());
-                            }
+                            //    // This is all that's going to execute as it clears the list.. we can "fire and forget".
+                            //    this.ScriptHost.MoonSharp.ExecuteAsync<object>(sb.ToString());
+                            //}
                         }
                         else
                         {
-                            this.ScriptHost.MoonSharp.ExecuteAsync<object>(alias.Command);
+                            _ = this.ScriptHost.MoonSharp.ExecuteFunctionAsync<object>(alias.AliasExpression, alias.Command, Array.Empty<string>());
                         }
 
                         return list;
