@@ -309,35 +309,9 @@ namespace Avalon
                     // If the alias is Lua then variables will be swapped in if necessary and then executed.
                     if (alias.IsLua || alias.ExecuteAs == ExecuteType.LuaMoonsharp)
                     {
+                        // TODO alias expression or the function name can't have invalid characters or start with a number.
                         list.Clear();
-
-                        // Alias where the arguments are specified, we will support up to 9 arguments at this time.  Only do
-                        // the replacements if the string contains a percent sign.
-                        if (alias.Command.Contains("%", StringComparison.Ordinal))
-                        {
-                            // TODO alias expression as function name, starting with x
-                            _ = this.ScriptHost.MoonSharp.ExecuteFunctionAsync<object>(alias.AliasExpression, alias.Command, Array.Empty<string>());
-                            //using (var sb = ZString.CreateStringBuilder())
-                            //{
-                            //    sb.Append(alias.Command);
-
-                            //    // %0 will represent the entire matched string.
-                            //    sb.Replace("%0", first.Item2.Replace("\"", "\\\""));
-
-                            //    // %1-%9
-                            //    for (int i = 1; i <= 9; i++)
-                            //    {
-                            //        sb.Replace($"%{i.ToString()}", first.Item2.ParseWord(i, " ").Replace("\"", "\\\""));
-                            //    }
-
-                            //    // This is all that's going to execute as it clears the list.. we can "fire and forget".
-                            //    this.ScriptHost.MoonSharp.ExecuteAsync<object>(sb.ToString());
-                            //}
-                        }
-                        else
-                        {
-                            _ = this.ScriptHost.MoonSharp.ExecuteFunctionAsync<object>(alias.AliasExpression, alias.Command, Array.Empty<string>());
-                        }
+                        _ = this.ScriptHost.MoonSharp.ExecuteFunctionAsync<object>(alias.AliasExpression, alias.Command, item.Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
                         return list;
                     }
