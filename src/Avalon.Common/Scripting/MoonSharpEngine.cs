@@ -66,6 +66,9 @@ namespace Avalon.Common.Scripting
                 }
             };
 
+            // marker
+            //this.MemoryPool.Fill(5);
+
             Script.WarmUp();
         }
 
@@ -308,30 +311,46 @@ namespace Avalon.Common.Scripting
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="functionName">The name of the function to call.</param>
-        /// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
         /// <param name="args">Any param arguments to pass to the function.</param>
-        public async Task<T> ExecuteFunctionAsync<T>(string functionName, params string[] args)
+        public Task<T> ExecuteFunctionAsync<T>(string functionName, params string[] args)
         {
+            return this.ExecuteFunctionAsync<T>(functionName, "", args);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="functionName"></param>
+        /// <param name="code"></param>
+        /// <param name="args"></param>
+        public async Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args)
+        {
+            this.LoadFunction(functionName, code);
+
             // Gets a new or used but ready instance of the a Lua object to use.
             var lua = MemoryPool.Get();
 
-            // See if the function exists, if it doesn't, we will load it based off of the code provided.
-            DynValue fnc = lua.Globals.Get(functionName);
+            // Get the function reference.
+            var fnc = lua.Globals.Get(functionName);
 
-            var ec = new ExecutionControlToken();
-
-            // If the function doesn't exist report the error and get out.
+            // If the function doesn't exist load it with the code provided.
             if (fnc.IsNil())
             {
-                throw new Exception($"Function '{functionName}' was not loaded.");
+                var notFoundException = new Exception($"Function '{functionName}' was not loaded.");
+                this?.ExceptionHandler(notFoundException);
+                MemoryPool.Return(lua);
+
+                throw notFoundException;
             }
 
             DynValue ret;
 
             try
             {
+                var executionControlToken = new ExecutionControlToken();
                 this.ScriptHost.Statistics.ScriptsActive++;
-                ret = await lua.CallAsync(ec, fnc, args);
+                ret = await lua.CallAsync(executionControlToken, fnc, args);
             }
             catch (Exception ex)
             {
@@ -357,68 +376,6 @@ namespace Avalon.Common.Scripting
         {
             return ExecuteFunction<T>(functionName, "", args);
         }
-
-        ///// <summary>
-        ///// Executes a function.  If the function isn't stored a copy will be loaded.
-        ///// </summary>
-        ///// <typeparam name="T"></typeparam>
-        ///// <param name="functionName">The name of the function to call.</param>
-        ///// <param name="code">The Lua code to load if the function hasn't already been loaded.</param>
-        ///// <param name="args">Any param arguments to pass to the function.</param>
-        //public T ExecuteFunction<T>(string functionName, string code, params string[] args)
-        //{
-        //    // Gets a new or used but ready instance of the a Lua object to use.
-        //    var lua = MemoryPool.Get();
-
-        //    // See if the function exists, if it doesn't, we will load it based off of the code provided.
-        //    DynValue fnc = lua.Globals.Get(functionName);
-
-        //    // If the function doesn't exist load it with the code provided.
-        //    if (fnc.IsNil())
-        //    {
-        //        try
-        //        {
-        //            this.ScriptHost.Statistics.ScriptsActive++;
-        //            _ = lua.DoString(code, codeFriendlyName: functionName);
-        //            fnc = lua.Globals.Get(functionName);
-
-        //            if (fnc.IsNil())
-        //            {
-        //                throw new Exception($"Function '{functionName}' was not loaded.");
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            this?.ExceptionHandler(ex);
-        //            throw;
-        //        }
-        //        finally
-        //        {
-        //            this.ScriptHost.Statistics.ScriptsActive--;
-        //            MemoryPool.Return(lua);
-        //        }
-        //    }
-
-        //    DynValue ret;
-
-        //    try
-        //    {
-        //        this.ScriptHost.Statistics.ScriptsActive++;
-        //        ret = lua.Call(fnc, args);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        this?.ExceptionHandler(ex);
-        //        throw;
-        //    }
-        //    finally
-        //    {
-        //        this.ScriptHost.Statistics.ScriptsActive--;
-        //        MemoryPool.Return(lua);
-        //    }
-
-        //    return ret.ToObject<T>();
-        //}
 
         /// <summary>
         /// Executes a function.  If the function isn't stored a copy will be loaded.

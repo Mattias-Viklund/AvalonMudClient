@@ -67,6 +67,14 @@ namespace Avalon.Common.Scripting
         /// <param name="functionName"></param>
         /// <param name="code"></param>
         /// <param name="args"></param>
+        Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args);
+
+        /// <summary>
+        /// Executes a function.  If the function isn't stored a copy will be loaded.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="functionName"></param>
+        /// <param name="args"></param>
         Task<T> ExecuteFunctionAsync<T>(string functionName, params string[] args);
 
         /// <summary>

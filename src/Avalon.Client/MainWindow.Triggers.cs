@@ -304,18 +304,6 @@ namespace Avalon
                         {
                             try
                             {
-                                // Create our param list to pass to the cached Lua function.
-                                //var sb = Argus.Memory.StringBuilderPool.Take();
-                                //sb.Append(trigger.OnMatchEvent);
-
-                                ////var paramList = new string[match.Groups.Count + 1];
-                                //sb.Replace("%0", line.Text);
-
-                                //for (int i = 1; i < match.Groups.Count; i++)
-                                //{
-                                //    sb.Replace($"%{i.ToString()}", match.Groups[i].Value);
-                                //}
-
                                 var paramList = new string[match.Groups.Count];
                                 paramList[0] = line.Text;
 
@@ -324,7 +312,9 @@ namespace Avalon
                                     paramList[i] = match.Groups[i].Value;
                                 }
 
-                                //string luaResult = Interp.ScriptHost.MoonSharp.Execute<string>(sb.ToString());
+                                // We'll send the function we want to call but also the code, if the code has changed
+                                // it nothing will be reloaded thus saving memory and calls.  This is why replacing %1
+                                // variables is problematic here and why we are forcing the use of Lua varargs (...)
                                 string luaResult = Interp.ScriptHost.MoonSharp.ExecuteFunction<string>(trigger.FunctionName, trigger.OnMatchEvent, paramList);
 
                                 if (!string.IsNullOrEmpty(luaResult))

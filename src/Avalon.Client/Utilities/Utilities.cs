@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -452,6 +453,5 @@ namespace Avalon.Utilities
             // Set the binding anew.
             BindingOperations.SetBinding(depObj, depProp, binding);
         }
-
     }
 }

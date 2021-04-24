@@ -164,8 +164,14 @@ namespace Avalon.Common.Scripting
             return Task.Run(() => this.Execute<T>(code));
         }
 
-        /// <inheritdoc cref="ExecuteFunctionAsync{T}"/>
+        /// <inheritdoc cref="ExecuteFunctionAsync{T}(string,string[])"/>
         public Task<T> ExecuteFunctionAsync<T>(string functionName, params string[] args)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc cref="ExecuteFunctionAsync{T}(string,string,string[])"/>
+        public Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args)
         {
             throw new NotImplementedException();
         }
