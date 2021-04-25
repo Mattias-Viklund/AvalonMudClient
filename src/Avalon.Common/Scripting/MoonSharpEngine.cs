@@ -11,7 +11,10 @@ using Argus.Memory;
 using MoonSharp.Interpreter;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
+using Argus.Extensions;
+using MemoryExtensions = System.MemoryExtensions;
 
 namespace Avalon.Common.Scripting
 {
@@ -66,9 +69,6 @@ namespace Avalon.Common.Scripting
                 }
             };
 
-            // marker
-            //this.MemoryPool.Fill(5);
-
             Script.WarmUp();
         }
 
@@ -101,7 +101,7 @@ namespace Avalon.Common.Scripting
                 foreach (var func in this.Functions)
                 {
                     var sb = StringBuilderPool.Take();
-                    sb.AppendFormat("function {0}(...)\n", func.Key);
+                    sb.AppendFormat("function {0}(...)\n", GetFunctionName(func.Key));
                     sb.Append(func.Value.Code);
                     sb.Append("\nend");
 
@@ -171,6 +171,7 @@ namespace Avalon.Common.Scripting
         /// <param name="functionName"></param>
         private bool FunctionExists(Script lua, string functionName)
         {
+            functionName = this.GetFunctionName(functionName);
             return !lua.Globals.Get(functionName).IsNil();
         }
 
@@ -326,6 +327,7 @@ namespace Avalon.Common.Scripting
         /// <param name="args"></param>
         public async Task<T> ExecuteFunctionAsync<T>(string functionName, string code, params string[] args)
         {
+            functionName = GetFunctionName(functionName);
             this.LoadFunction(functionName, code);
 
             // Gets a new or used but ready instance of the a Lua object to use.
@@ -386,6 +388,7 @@ namespace Avalon.Common.Scripting
         /// <param name="args">Any param arguments to pass to the function.</param>
         public T ExecuteFunction<T>(string functionName, string code, params string[] args)
         {
+            functionName = GetFunctionName(functionName);
             this.LoadFunction(functionName, code);
 
             // Gets a new or used but ready instance of the a Lua object to use.
@@ -585,6 +588,40 @@ namespace Avalon.Common.Scripting
                     Success = false,
                     Exception = ex
                 };
+            }
+        }
+
+        /// <summary>
+        /// Returns the name of a function.
+        /// </summary>
+        /// <param name="functionName"></param>
+        private string GetFunctionName(string functionName)
+        {
+            var sb = Argus.Memory.StringBuilderPool.Take();
+
+            try
+            {
+                sb.Append('x');
+
+                ReadOnlySpan<char> span = functionName.AsSpan();
+
+                for (int i = 0; i < span.Length; i++)
+                {
+                    if (span[i].IsLetter() || span[i].IsNumber())
+                    {
+                        sb.Append(span[i]);
+                    }
+                    else if (span[i].Equals('-'))
+                    {
+                        sb.Append('_');
+                    }
+                }
+
+                return sb.ToString();
+            }
+            finally
+            {
+                Argus.Memory.StringBuilderPool.Return(sb);
             }
         }
     }
