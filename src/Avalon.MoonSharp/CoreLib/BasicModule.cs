@@ -188,6 +188,33 @@ namespace MoonSharp.Interpreter.CoreLib
             return DynValue.NewTupleNested(values.ToArray());
         }
 
+        /// <summary>
+        /// Returns the first non null value.  If no non null values are found a blank string is returned.
+        /// coalesce(..., default_value)
+        /// </summary>
+        /// <param name="executionContext"></param>
+        /// <param name="args"></param>
+        /// <remarks>
+        /// Lua addition
+        /// </remarks>
+        [MoonSharpModuleMethod]
+        public static DynValue coalesce(ScriptExecutionContext executionContext, CallbackArguments args)
+        {
+            if (args.Count < 1)
+            {
+                throw ScriptRuntimeException.BadArgumentValueExpected(0, "coalesce");
+            }
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].IsNotNil())
+                {
+                    return args[i];
+                }
+            }
+
+            return DynValue.NewString("");
+        }
 
         // tonumber (e [, base])
         // ----------------------------------------------------------------------------------------------------------------

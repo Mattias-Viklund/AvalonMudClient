@@ -104,7 +104,6 @@ namespace Avalon.Controls
             try
             {
                 // Executes a single use one time script that will be discarded when done.
-                //_ = App.MainWindow.Interp.ScriptHost.MoonSharp.ExecuteStaticAsync<object>(Editor.Text);
                 _ = App.MainWindow.Interp.ScriptHost.MoonSharp.ExecuteStaticAsync<object>(Editor.Text);
             }
             catch (Exception ex)
