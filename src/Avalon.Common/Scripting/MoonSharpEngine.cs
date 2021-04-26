@@ -101,7 +101,7 @@ namespace Avalon.Common.Scripting
                 foreach (var func in this.Functions)
                 {
                     var sb = StringBuilderPool.Take();
-                    sb.AppendFormat("function {0}(...)\n", GetFunctionName(func.Key));
+                    sb.AppendFormat("function {0}(...)\n", func.Key);
                     sb.Append(func.Value.Code);
                     sb.Append("\nend");
 
@@ -163,18 +163,7 @@ namespace Avalon.Common.Scripting
         {
             GC.Collect(2, GCCollectionMode.Forced);
         }
-
-        /// <summary>
-        /// Whether a function exists or not in the <see cref="Script"/> or not.
-        /// </summary>
-        /// <param name="lua"></param>
-        /// <param name="functionName"></param>
-        private bool FunctionExists(Script lua, string functionName)
-        {
-            functionName = this.GetFunctionName(functionName);
-            return !lua.Globals.Get(functionName).IsNil();
-        }
-
+        
         /// <summary>
         /// Loads a function into all available script objects in the <see cref="MemoryPool"/>.
         /// </summary>
@@ -402,7 +391,7 @@ namespace Avalon.Common.Scripting
             {
                 var notFoundException = new Exception($"Function '{functionName}' was not loaded.");
                 this?.ExceptionHandler(notFoundException);
-                MemoryPool.Return(lua);
+               MemoryPool.Return(lua);
 
                 throw notFoundException;
             }
@@ -597,31 +586,34 @@ namespace Avalon.Common.Scripting
         /// <param name="functionName"></param>
         private string GetFunctionName(string functionName)
         {
-            var sb = Argus.Memory.StringBuilderPool.Take();
+            var sb = StringBuilderPool.Take();
 
             try
             {
                 sb.Append('x');
 
-                ReadOnlySpan<char> span = functionName.AsSpan();
-
-                for (int i = 0; i < span.Length; i++)
+                for (int i = 0; i < functionName.Length; i++)
                 {
-                    if (span[i].IsLetter() || span[i].IsNumber())
+                    if (functionName[i].IsLetter() || functionName[i].IsNumber())
                     {
-                        sb.Append(span[i]);
+                        sb.Append(functionName[i]);
                     }
-                    else if (span[i].Equals('-'))
+                    else if (functionName[i].Equals('-'))
                     {
                         sb.Append('_');
                     }
+                }
+
+                if (sb.ToString().StartsWith("xx"))
+                {
+                    int x = 0;
                 }
 
                 return sb.ToString();
             }
             finally
             {
-                Argus.Memory.StringBuilderPool.Return(sb);
+                StringBuilderPool.Return(sb);
             }
         }
     }

@@ -7,11 +7,9 @@
  * @license           : MIT
  */
 
+using Avalon.Common.Interfaces;
 using System;
 using System.ComponentModel;
-using Avalon.Common.Interfaces;
-using Avalon.Lua;
-using Newtonsoft.Json;
 
 namespace Avalon.Common.Models
 {
@@ -52,15 +50,6 @@ namespace Avalon.Common.Models
             set
             {
                 _command = value;
-
-                // If the command changed and it's Lua, update the re-usable function.
-                if (this.ExecuteAs == ExecuteType.LuaMoonsharp)
-                {
-                    this.LuaScript ??= new LuaScript(this.AliasExpression);
-                    this.LuaScript.Code = value;
-                    this.LuaScript.Updated = true;
-                }
-
                 OnPropertyChanged(nameof(Command));
             }
         }
@@ -119,12 +108,6 @@ namespace Avalon.Common.Models
 
         /// <inheritdoc />
         public string PackageId { get; set; } = "";
-
-        /// <summary>
-        /// Represents a Lua script object.
-        /// </summary>
-        [JsonIgnore]
-        public LuaScript LuaScript { get; set; }
 
         protected virtual void OnPropertyChanged(string propertyName)
         {

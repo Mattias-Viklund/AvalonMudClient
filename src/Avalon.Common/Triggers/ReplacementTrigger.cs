@@ -14,7 +14,6 @@ using System.ComponentModel;
 using System.Text.RegularExpressions;
 using Argus.Extensions;
 using Avalon.Common.Scripting;
-using Avalon.Lua;
 using Cysharp.Text;
 
 namespace Avalon.Common.Triggers

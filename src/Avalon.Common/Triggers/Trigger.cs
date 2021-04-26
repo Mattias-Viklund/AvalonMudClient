@@ -13,9 +13,7 @@ using Cysharp.Text;
 using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
-using System.Text;
 using System.Text.RegularExpressions;
-using Avalon.Lua;
 
 namespace Avalon.Common.Triggers
 {
@@ -38,7 +36,6 @@ namespace Avalon.Common.Triggers
             this.Character = character;
             this.IsSilent = isSilent;
             this.Identifier = identifier;
-            this.LuaScript = new LuaScript(identifier);
             this.MoveTo = moveTo;
             this.Gag = gag;
             this.Group = group;
@@ -58,7 +55,6 @@ namespace Avalon.Common.Triggers
             this.Command = command;
             this.Character = character;
             this.Identifier = identifier;
-            this.LuaScript = new LuaScript(identifier);
             this.IsSilent = isSilent;
         }
 
@@ -68,7 +64,6 @@ namespace Avalon.Common.Triggers
             this.Command = command;
             this.Character = character;
             this.Identifier = identifier;
-            this.LuaScript = new LuaScript(identifier);
             this.IsSilent = isSilent;
             this.MoveTo = moveTo;
             this.Gag = gag;
@@ -175,14 +170,6 @@ namespace Avalon.Common.Triggers
             set
             {
                 _command = value;
-
-                if (this.LuaScript == null)
-                {
-                    this.LuaScript = new LuaScript(this.Identifier);
-                }
-
-                this.LuaScript.Code = value;
-                this.LuaScript.Updated = true;
                 OnPropertyChanged(nameof(Command));
             }
         }
@@ -261,12 +248,6 @@ namespace Avalon.Common.Triggers
                 }
             }
         }
-
-        /// <summary>
-        /// Represents a Lua script object.
-        /// </summary>
-        [JsonIgnore]
-        public LuaScript LuaScript { get; set; }
 
         private bool _disableAfterTriggered = false;
 
