@@ -604,11 +604,6 @@ namespace Avalon.Common.Scripting
                     }
                 }
 
-                if (sb.ToString().StartsWith("xx"))
-                {
-                    int x = 0;
-                }
-
                 return sb.ToString();
             }
             finally

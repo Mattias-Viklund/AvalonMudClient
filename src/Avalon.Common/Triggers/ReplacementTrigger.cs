@@ -21,8 +21,13 @@ namespace Avalon.Common.Triggers
     /// <inheritdoc cref="IReplacementTrigger" />
     public class ReplacementTrigger : IReplacementTrigger, INotifyPropertyChanged, IModelInfo
     {
-        private string _id = Guid.NewGuid().ToString();
+        public ReplacementTrigger()
+        {
+            this.Id = Guid.NewGuid().ToString();
+        }
 
+        private string _id;
+        
         /// <inheritdoc/>
         public string Id
         {
