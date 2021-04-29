@@ -7,12 +7,14 @@
  * @license           : MIT
  */
 
+using System.ComponentModel;
+
 namespace Avalon.Common.Scripting
 {
     /// <summary>
     /// A class that tracks statistics for the scripting environment as a whole.
     /// </summary>
-    public class ScriptStatistics
+    public class ScriptStatistics : INotifyPropertyChanged
     {
         /// <summary>
         /// An object for thread locking access to resources.
@@ -33,7 +35,36 @@ namespace Avalon.Common.Scripting
                 {
                     _scriptsActive = value;
                 }
+
+                OnPropertyChanged(nameof(ScriptsActive));
             }
         }
+
+        private int _runCount = 0;
+
+        /// <summary>
+        /// The total number of scripts that have been run.
+        /// </summary>
+        public int RunCount
+        {
+            get => _runCount;
+            set
+            {
+                lock (_lockObject)
+                {
+                    _runCount = value;
+                }
+
+                OnPropertyChanged(nameof(RunCount));
+            }
+        }
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            var e = new PropertyChangedEventArgs(propertyName);
+            PropertyChanged?.Invoke(this, e);
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 }

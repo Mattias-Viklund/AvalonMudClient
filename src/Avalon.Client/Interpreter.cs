@@ -57,15 +57,20 @@ namespace Avalon
 
             this.ScriptHost.MoonSharp.ExceptionHandler = (ex) =>
             {
-                this.Conveyor.EchoError($"Lua Exception: {ex.Message}");
+                // InterpreterException's give us more info, like the line number and column the
+                // error occurred on.
+                if (ex is InterpreterException luaEx)
+                {
+                    this.Conveyor.EchoError($"Lua Exception: {luaEx.DecoratedMessage}");
+                }
+                else
+                {
+                    this.Conveyor.EchoError($"Lua Exception: {ex.Message}");
+                }
 
                 if (ex.InnerException is InterpreterException innerEx)
                 {
                     this.Conveyor.EchoError($"Lua Inner Exception: {innerEx?.DecoratedMessage}");
-                }
-                else
-                {
-                    this.Conveyor.EchoError($"Lua Inner Exception: {ex.InnerException?.Message ?? "null message"}");
                 }
             };
 

@@ -36,7 +36,6 @@ namespace Avalon
         public static readonly DependencyProperty ScheduledTasksActiveProperty =
             DependencyProperty.Register(nameof(ScheduledTasksActive), typeof(int), typeof(MainWindowViewModel), new PropertyMetadata(0));
 
-
         /// <summary>
         /// The current number of Lua scripts that are active.
         /// </summary>

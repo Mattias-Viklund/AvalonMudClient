@@ -149,7 +149,6 @@ namespace MoonSharp.Interpreter.Tree
             }
         }
 
-
         private Token ReadToken()
         {
             this.SkipWhiteSpace();
@@ -173,31 +172,28 @@ namespace MoonSharp.Interpreter.Tree
                     this.CursorCharNext();
                     return this.CreateToken(TokenType.SemiColon, fromLine, fromCol, ";");
                 case '=':
-                    return this.PotentiallyDoubleCharOperator('=', TokenType.Op_Assignment, TokenType.Op_Equal,
-                        fromLine, fromCol);
+                    return this.PotentiallyDoubleCharOperator('=', TokenType.Op_Assignment, TokenType.Op_Equal, fromLine, fromCol);
                 case '<':
-                    return this.PotentiallyDoubleCharOperator('=', TokenType.Op_LessThan, TokenType.Op_LessThanEqual,
-                        fromLine, fromCol);
+                    return this.PotentiallyDoubleCharOperator('=', TokenType.Op_LessThan, TokenType.Op_LessThanEqual, fromLine, fromCol);
                 case '>':
-                    return this.PotentiallyDoubleCharOperator('=', TokenType.Op_GreaterThan,
-                        TokenType.Op_GreaterThanEqual, fromLine, fromCol);
+                    return this.PotentiallyDoubleCharOperator('=', TokenType.Op_GreaterThan, TokenType.Op_GreaterThanEqual, fromLine, fromCol);
                 case '~':
                 case '!':
                     if (this.CursorCharNext() != '=')
                     {
-                        throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
-                            "unexpected symbol near '{0}'", c);
+                        throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol), "unexpected symbol near '{0}'", c);
                     }
 
                     this.CursorCharNext();
+
                     return this.CreateToken(TokenType.Op_NotEqual, fromLine, fromCol, "~=");
                 case '.':
                     {
                         char next = this.CursorCharNext();
+
                         if (next == '.')
                         {
-                            return this.PotentiallyDoubleCharOperator('.', TokenType.Op_Concat, TokenType.VarArgs, fromLine,
-                                fromCol);
+                            return this.PotentiallyDoubleCharOperator('.', TokenType.Op_Concat, TokenType.VarArgs, fromLine, fromCol);
                         }
 
                         if (LexerUtils.CharIsDigit(next))
@@ -212,6 +208,7 @@ namespace MoonSharp.Interpreter.Tree
                 case '-':
                     {
                         char next = this.CursorCharNext();
+
                         if (next == '-')
                         {
                             return this.ReadComment(fromLine, fromCol);
@@ -240,6 +237,7 @@ namespace MoonSharp.Interpreter.Tree
                 case '[':
                     {
                         char next = this.CursorCharNext();
+
                         if (next == '=' || next == '[')
                         {
                             string str = this.ReadLongString(fromLine, fromCol, null, "string");
@@ -261,14 +259,12 @@ namespace MoonSharp.Interpreter.Tree
                 case ',':
                     return this.CreateSingleCharToken(TokenType.Comma, fromLine, fromCol);
                 case ':':
-                    return this.PotentiallyDoubleCharOperator(':', TokenType.Colon, TokenType.DoubleColon, fromLine,
-                        fromCol);
+                    return this.PotentiallyDoubleCharOperator(':', TokenType.Colon, TokenType.DoubleColon, fromLine, fromCol);
                 case '"':
                 case '\'':
                     return this.ReadSimpleStringToken(fromLine, fromCol);
                 case '\0':
-                    throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
-                        "unexpected symbol near '{0}'", this.CursorChar())
+                    throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol), "unexpected symbol near '{0}'", this.CursorChar())
                     {
                         IsPrematureStreamTermination = true
                     };
@@ -286,8 +282,7 @@ namespace MoonSharp.Interpreter.Tree
                         }
                     }
 
-                    throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol),
-                        "unexpected symbol near '{0}'", this.CursorChar());
+                    throw new SyntaxErrorException(this.CreateToken(TokenType.Invalid, fromLine, fromCol), "unexpected symbol near '{0}'", this.CursorChar());
             }
         }
 
@@ -578,8 +573,7 @@ namespace MoonSharp.Interpreter.Tree
         }
 
 
-        private Token PotentiallyDoubleCharOperator(char expectedSecondChar, TokenType singleCharToken,
-            TokenType doubleCharToken, int fromLine, int fromCol)
+        private Token PotentiallyDoubleCharOperator(char expectedSecondChar, TokenType singleCharToken, TokenType doubleCharToken, int fromLine, int fromCol)
         {
             string op = this.CursorChar().ToString();
 

@@ -7,14 +7,12 @@
  * @license           : MIT
  */
 
+using Argus.Extensions;
 using Argus.Memory;
 using MoonSharp.Interpreter;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using Argus.Extensions;
-using MemoryExtensions = System.MemoryExtensions;
 
 namespace Avalon.Common.Scripting
 {
@@ -248,6 +246,7 @@ namespace Avalon.Common.Scripting
             try
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
+                this.ScriptHost.Statistics.RunCount++;
                 ret = lua.DoString(code);
             }
             catch (Exception ex)
@@ -280,6 +279,7 @@ namespace Avalon.Common.Scripting
             try
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
+                this.ScriptHost.Statistics.RunCount++;
                 ret = await lua.DoStringAsync(executionControlToken, code);
             }
             catch (Exception ex)
@@ -341,6 +341,7 @@ namespace Avalon.Common.Scripting
             {
                 var executionControlToken = new ExecutionControlToken();
                 this.ScriptHost.Statistics.ScriptsActive++;
+                this.ScriptHost.Statistics.RunCount++;
                 ret = await lua.CallAsync(executionControlToken, fnc, args);
             }
             catch (Exception ex)
@@ -391,7 +392,7 @@ namespace Avalon.Common.Scripting
             {
                 var notFoundException = new Exception($"Function '{functionName}' was not loaded.");
                 this?.ExceptionHandler(notFoundException);
-               MemoryPool.Return(lua);
+                MemoryPool.Return(lua);
 
                 throw notFoundException;
             }
@@ -401,6 +402,7 @@ namespace Avalon.Common.Scripting
             try
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
+                this.ScriptHost.Statistics.RunCount++;
                 ret = lua.Call(fnc, args);
             }
             catch (Exception ex)
@@ -434,6 +436,7 @@ namespace Avalon.Common.Scripting
             try
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
+                this.ScriptHost.Statistics.RunCount++;
                 ret = lua.DoString(code);
             }
             catch (Exception ex)
@@ -467,6 +470,7 @@ namespace Avalon.Common.Scripting
             try
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
+                this.ScriptHost.Statistics.RunCount++;
                 ret = await lua.DoStringAsync(executionControlToken, code);
             }
             catch (Exception ex)

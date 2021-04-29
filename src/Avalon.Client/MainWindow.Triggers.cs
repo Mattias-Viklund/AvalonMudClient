@@ -301,7 +301,7 @@ namespace Avalon
 
                     if (match.TrySuccess())
                     {
-                        // We know if it's a success and it's found hasn't been set yet that we will need
+                        // We know if it's a success and it's found hasn't been set yet that we wilfl need
                         // to process it AND the StringBuilder needs to be populated because this is the
                         // first match (of potentially more).  No point in populating the StringBuilder until
                         // we know we're going to need it.
@@ -340,11 +340,10 @@ namespace Avalon
                                     found = true;
                                 }
                             }
-                            catch (Exception ex)
+                            catch
                             {
-                                // If an error occurs, make the found false so it doesn't replace anything with a null or empty.
-                                App.Conveyor.EchoError("An error occurred executing Lua on a replacement trigger.");
-                                App.Conveyor.EchoError(ex.Message);
+                                // The error handler for the Lua will have already fired, we don't need to do any special
+                                // processing at this juncture other than saying we didn't find anything to replace.
                                 found = false;
                             }
                         }
