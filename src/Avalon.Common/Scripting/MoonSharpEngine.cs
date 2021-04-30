@@ -38,6 +38,16 @@ namespace Avalon.Common.Scripting
         public Action<Exception> ExceptionHandler { get; set; }
 
         /// <summary>
+        /// Event for before a script executes.
+        /// </summary>
+        public EventHandler<EventArgs> PreScriptExecute { get; set; }
+
+        /// <summary>
+        /// Event for after a script has executed.
+        /// </summary>
+        public EventHandler<EventArgs> PostScriptExecute { get; set; }
+
+        /// <summary>
         /// The list of functions and code which have been loaded into this environment.
         /// </summary>
         public Dictionary<string, SourceCode> Functions { get; set; } = new();
@@ -112,6 +122,22 @@ namespace Avalon.Common.Scripting
             {
                 Console.WriteLine(e);
             }
+        }
+
+        /// <summary>
+        /// Event for before a script executes.
+        /// </summary>
+        private void OnPreScriptExecuted()
+        {
+            this.PreScriptExecute?.Invoke(this, null);
+        }
+
+        /// <summary>
+        /// Event for after a script executes.
+        /// </summary>
+        private void OnPostScriptExecuted()
+        {
+            this.PostScriptExecute?.Invoke(this, null);
         }
 
         /// <inheritdoc cref="RegisterObject{T}"/>
@@ -247,6 +273,7 @@ namespace Avalon.Common.Scripting
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
                 this.ScriptHost.Statistics.RunCount++;
+                this.OnPreScriptExecuted();
                 ret = lua.DoString(code);
             }
             catch (Exception ex)
@@ -257,6 +284,7 @@ namespace Avalon.Common.Scripting
             finally
             {
                 this.ScriptHost.Statistics.ScriptsActive--;
+                this.OnPostScriptExecuted();
                 MemoryPool.Return(lua);
             }
 
@@ -280,6 +308,7 @@ namespace Avalon.Common.Scripting
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
                 this.ScriptHost.Statistics.RunCount++;
+                this.OnPreScriptExecuted();
                 ret = await lua.DoStringAsync(executionControlToken, code);
             }
             catch (Exception ex)
@@ -290,6 +319,7 @@ namespace Avalon.Common.Scripting
             finally
             {
                 this.ScriptHost.Statistics.ScriptsActive--;
+                this.OnPostScriptExecuted();
                 MemoryPool.Return(lua);
             }
 
@@ -342,6 +372,7 @@ namespace Avalon.Common.Scripting
                 var executionControlToken = new ExecutionControlToken();
                 this.ScriptHost.Statistics.ScriptsActive++;
                 this.ScriptHost.Statistics.RunCount++;
+                this.OnPreScriptExecuted();
                 ret = await lua.CallAsync(executionControlToken, fnc, args);
             }
             catch (Exception ex)
@@ -352,6 +383,7 @@ namespace Avalon.Common.Scripting
             finally
             {
                 this.ScriptHost.Statistics.ScriptsActive--;
+                this.OnPostScriptExecuted();
                 MemoryPool.Return(lua);
             }
 
@@ -403,6 +435,7 @@ namespace Avalon.Common.Scripting
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
                 this.ScriptHost.Statistics.RunCount++;
+                this.OnPreScriptExecuted();
                 ret = lua.Call(fnc, args);
             }
             catch (Exception ex)
@@ -413,6 +446,7 @@ namespace Avalon.Common.Scripting
             finally
             {
                 this.ScriptHost.Statistics.ScriptsActive--;
+                this.OnPostScriptExecuted();
                 MemoryPool.Return(lua);
             }
 
@@ -437,6 +471,7 @@ namespace Avalon.Common.Scripting
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
                 this.ScriptHost.Statistics.RunCount++;
+                this.OnPreScriptExecuted();
                 ret = lua.DoString(code);
             }
             catch (Exception ex)
@@ -447,6 +482,7 @@ namespace Avalon.Common.Scripting
             finally
             {
                 this.ScriptHost.Statistics.ScriptsActive--;
+                this.OnPostScriptExecuted();
             }
 
             return ret.ToObject<T>();
@@ -471,6 +507,7 @@ namespace Avalon.Common.Scripting
             {
                 this.ScriptHost.Statistics.ScriptsActive++;
                 this.ScriptHost.Statistics.RunCount++;
+                this.OnPreScriptExecuted();
                 ret = await lua.DoStringAsync(executionControlToken, code);
             }
             catch (Exception ex)
@@ -481,6 +518,7 @@ namespace Avalon.Common.Scripting
             finally
             {
                 this.ScriptHost.Statistics.ScriptsActive--;
+                this.OnPostScriptExecuted();
             }
 
             return ret.ToObject<T>();

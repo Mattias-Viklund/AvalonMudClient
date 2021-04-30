@@ -16,6 +16,7 @@ using Avalon.Lua;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalon.Colors;
@@ -54,6 +55,16 @@ namespace Avalon
             _scriptCommands = new ScriptCommands(this, _random);
             this.ScriptHost = new ScriptHost();
             this.ScriptHost.RegisterObject<ScriptCommands>(_scriptCommands.GetType(), _scriptCommands, "lua");
+
+            this.ScriptHost.MoonSharp.PreScriptExecute += (sender, e) =>
+            {
+                App.MainWindow.ViewModel.LuaScriptsActive = this.ScriptHost.Statistics.ScriptsActive;
+            };
+
+            this.ScriptHost.MoonSharp.PostScriptExecute += (sender, e) => 
+            {
+                App.MainWindow.ViewModel.LuaScriptsActive = this.ScriptHost.Statistics.ScriptsActive;
+            };
 
             this.ScriptHost.MoonSharp.ExceptionHandler = (ex) =>
             {
