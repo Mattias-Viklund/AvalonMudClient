@@ -103,25 +103,24 @@ namespace Avalon.Common.Scripting
             // Set the global variables that are specifically only available in Lua.
             script.Globals["global"] = this.GlobalVariables;
 
-            try
+            // Try to load all the functions we have stored.
+            foreach (var func in this.Functions)
             {
-                // When loading every function, we don't want a syntax error in one function messing up
-                // another, although having exceptions thrown will be costly. :/
-                foreach (var func in this.Functions)
+                try
                 {
-                    var sb = StringBuilderPool.Take();
-                    sb.AppendFormat("function {0}(...)\n", func.Key);
-                    sb.Append(func.Value.Code);
-                    sb.Append("\nend");
+                    using (var sb = ZString.CreateStringBuilder())
+                    {
+                        sb.AppendFormat("function {0}(...)\n", func.Key);
+                        sb.Append(func.Value.Code);
+                        sb.Append("\nend");
 
-                    _ = script.DoString(sb.ToString(), codeFriendlyName: func.Key);
-
-                    StringBuilderPool.Return(sb);
+                        _ = script.DoString(sb.ToString(), codeFriendlyName: func.Key);
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
+                catch (Exception ex)
+                {
+                    this?.ExceptionHandler(ex);
+                }
             }
         }
 
@@ -188,7 +187,7 @@ namespace Avalon.Common.Scripting
         {
             GC.Collect(2, GCCollectionMode.Forced);
         }
-        
+
         /// <summary>
         /// Loads a function into all available script objects in the <see cref="MemoryPool"/>.
         /// </summary>
@@ -233,22 +232,24 @@ namespace Avalon.Common.Scripting
                 this.MemoryPool.InvokeAll((script) =>
                 {
                     if (update)
-                    { 
+                    {
                         script.Globals.Remove(functionName);
                     }
 
-                    var sb = StringBuilderPool.Take();
-                    sb.AppendFormat("function {0}(...)\n", functionName);
-                    sb.Append(code);
-                    sb.Append("\nend");
+                    using (var sb = ZString.CreateStringBuilder())
+                    {
+                        sb.AppendFormat("function {0}(...)\n", functionName);
+                        sb.Append(code);
+                        sb.Append("\nend");
 
-                    _ = script.DoString(sb.ToString(), codeFriendlyName: functionName);
-
-                    StringBuilderPool.Return(sb);
+                        _ = script.DoString(sb.ToString(), codeFriendlyName: functionName);
+                    }
                 });
 
                 // When these are loaded from the get go there maybe nothing in the memory pool to run
-                // this against yet.  We will save this, but it could have errors associated with it.
+                // this against yet.  We will save this, but it could have errors associated with it.  If
+                // a script has an error, it won't get to here.  It has to have been loaded successfully
+                // for us to save it.
                 this.Functions[functionName] = new SourceCode(code);
             }
             catch (Exception ex)
