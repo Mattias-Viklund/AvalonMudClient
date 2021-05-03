@@ -9,6 +9,7 @@
 
 using Argus.Extensions;
 using Argus.Memory;
+using Cysharp.Text;
 using MoonSharp.Interpreter;
 using System;
 using System.Collections.Generic;
@@ -628,9 +629,7 @@ namespace Avalon.Common.Scripting
         /// <param name="functionName"></param>
         private string GetFunctionName(string functionName)
         {
-            var sb = StringBuilderPool.Take();
-
-            try
+            using (var sb = ZString.CreateStringBuilder())
             {
                 sb.Append('x');
 
@@ -647,10 +646,6 @@ namespace Avalon.Common.Scripting
                 }
 
                 return sb.ToString();
-            }
-            finally
-            {
-                StringBuilderPool.Return(sb);
             }
         }
     }

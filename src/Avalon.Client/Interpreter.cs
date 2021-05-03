@@ -8,22 +8,21 @@
  */
 
 using Argus.Extensions;
+using Avalon.Colors;
 using Avalon.Common.Colors;
 using Avalon.Common.Interfaces;
 using Avalon.Common.Models;
-using Avalon.Network;
+using Avalon.Common.Scripting;
 using Avalon.Lua;
+using Avalon.Network;
+using Cysharp.Text;
+using MoonSharp.Interpreter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalon.Colors;
-using System.Text;
-using Avalon.Common.Scripting;
-using Cysharp.Text;
-using MoonSharp.Interpreter;
 
 namespace Avalon
 {
@@ -53,15 +52,26 @@ namespace Avalon
             // environment to stay generic while the client worries about the implementation details.
             _random = new Random();
             _scriptCommands = new ScriptCommands(this, _random);
+
+            this.MoonSharpInit();
+            this.NLuaInit();
+        }
+
+        /// <summary>
+        /// Sets up the MoonSharp Lua script engine.
+        /// </summary>
+        private void MoonSharpInit()
+        {
             this.ScriptHost = new ScriptHost();
             this.ScriptHost.RegisterObject<ScriptCommands>(_scriptCommands.GetType(), _scriptCommands, "lua");
 
+            // Events for before and after execution of a script.
             this.ScriptHost.MoonSharp.PreScriptExecute += (sender, e) =>
             {
                 App.MainWindow.ViewModel.LuaScriptsActive = this.ScriptHost.Statistics.ScriptsActive;
             };
 
-            this.ScriptHost.MoonSharp.PostScriptExecute += (sender, e) => 
+            this.ScriptHost.MoonSharp.PostScriptExecute += (sender, e) =>
             {
                 App.MainWindow.ViewModel.LuaScriptsActive = this.ScriptHost.Statistics.ScriptsActive;
             };
@@ -88,7 +98,13 @@ namespace Avalon
             // Populate the script engine's memory pool.
             this.ScriptHost.MoonSharp.MemoryPool.Fill(5);
             App.Conveyor.EchoInfo("{CM{coon{CS{charp{x Lua Memory Pool Initialized with 5/10 instances.");
+        }
 
+        /// <summary>
+        /// Sets up the NLua script engine.
+        /// </summary>
+        public void NLuaInit()
+        {
             this.ScriptHost.NLua.ExceptionHandler = (ex) =>
             {
                 if (ex is NLua.Exceptions.LuaException exLua)
@@ -235,6 +251,22 @@ namespace Avalon
                     Telnet.Dispose();
                     Telnet = null;
                 }
+
+                // If there was a last host and it was not the current IP to connect to it likely means
+                // a new profile was loaded, in that case we're going to reset the ScriptingHost to it's default
+                // so things aren't hanging around.
+                if (!string.IsNullOrWhiteSpace(_lastHost) && !string.Equals(_lastHost, App.Settings.ProfileSettings.IpAddress))
+                {
+                    this.ScriptHost?.Reset();
+                    Conveyor.EchoLog("Host change detected: Scripting environment reset.", LogType.Information);
+
+                    // Populate the script engine's memory pool.
+                    this.ScriptHost?.MoonSharp.MemoryPool.Fill(5);
+                    App.Conveyor.EchoInfo("{CM{coon{CS{charp{x Lua Memory Pool Initialized with 5/10 instances.");
+                }
+
+                // We can set this now, when we come back in if the IP changes they we'll reset above.
+                _lastHost = App.Settings.ProfileSettings.IpAddress;
 
                 Conveyor.EchoLog($"Connecting: {App.Settings.ProfileSettings.IpAddress}:{App.Settings.ProfileSettings.Port}", LogType.Information);
 
@@ -586,6 +618,11 @@ namespace Avalon
         private string _spamGuardLastCommand = "";
 
         private int _spamGuardCounter = 0;
+
+        /// <summary>
+        /// The last host the client connected to (used to determine if the host has changed).
+        /// </summary>
+        private string _lastHost = "";
 
         /// <summary>
         /// The history of all commands.
