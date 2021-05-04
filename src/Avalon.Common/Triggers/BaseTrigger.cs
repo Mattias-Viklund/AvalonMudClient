@@ -14,6 +14,7 @@ using System;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using Argus.Extensions;
+using Avalon.Common.Scripting;
 
 namespace Avalon.Common.Triggers
 {
@@ -212,6 +213,27 @@ namespace Avalon.Common.Triggers
         /// <inheritdoc />
         [JsonIgnore]
         public IConveyor Conveyor { get; set; }
+
+        /// <summary>
+        /// A reference to the scripting environment.
+        /// </summary>
+        [JsonIgnore]
+        public ScriptHost ScriptHost { get; set; }
+
+        private bool _temp = false;
+
+        /// <summary>
+        /// If the trigger is temporary and should not be saved with the profile.
+        /// </summary>
+        public bool Temp
+        {
+            get => _temp;
+            set
+            {
+                _temp = value;
+                OnPropertyChanged(nameof(Temp));
+            }
+        }
 
         /// <summary>
         /// Clones the trigger.

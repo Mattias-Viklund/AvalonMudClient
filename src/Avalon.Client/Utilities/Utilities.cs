@@ -38,6 +38,7 @@ namespace Avalon.Utilities
                     if (trigger.Conveyor == null && App.Conveyor != null)
                     {
                         trigger.Conveyor = App.Conveyor;
+                        trigger.ScriptHost = App.MainWindow.Interp.ScriptHost;
                     }
                 }
             }
@@ -49,6 +50,7 @@ namespace Avalon.Utilities
                     trigger.ScriptHost = App.MainWindow.Interp.ScriptHost;
                 }
             }
+
         }
 
         /// <summary>

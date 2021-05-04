@@ -227,6 +227,18 @@ namespace Avalon.Common.Settings
                     }
                 }
             }
+
+            // Remove any temporary triggers that were saved.
+            if (this.ProfileSettings.TriggerList.Any())
+            {
+                for (int i = this.ProfileSettings.TriggerList.Count - 1; i >= 0; i--)
+                {
+                    if (this.ProfileSettings.TriggerList[i].Temp)
+                    {
+                        this.ProfileSettings.TriggerList.RemoveAt(i);
+                    }
+                }
+            }
         }
 
         /// <summary>
