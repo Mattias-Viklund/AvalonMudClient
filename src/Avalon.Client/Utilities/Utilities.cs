@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using Avalon.Common.Models;
 
 namespace Avalon.Utilities
 {
@@ -39,6 +40,12 @@ namespace Avalon.Utilities
                     {
                         trigger.Conveyor = App.Conveyor;
                         trigger.ScriptHost = App.MainWindow.Interp.ScriptHost;
+
+                        // If it's got the old IsLua bit and it's set as a Command (the default) set it to MoonSharp.
+                        if (trigger.IsLua && trigger.ExecuteAs == ExecuteType.Command)
+                        {
+                            trigger.ExecuteAs = ExecuteType.LuaMoonsharp;
+                        }
                     }
                 }
             }
@@ -51,6 +58,24 @@ namespace Avalon.Utilities
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Sets up any aliases with logic that should be executed on them.
+        /// </summary>
+        public static void SetupAliases()
+        {
+            if (App.Settings?.ProfileSettings?.AliasList != null)
+            {
+                foreach (var alias in App.Settings.ProfileSettings.AliasList)
+                {
+                    // If it's got the old IsLua bit and it's set as a Command (the default) set it to MoonSharp.
+                    if (alias.IsLua && alias.ExecuteAs == ExecuteType.Command)
+                    {
+                        alias.ExecuteAs = ExecuteType.LuaMoonsharp;
+                    }
+                }
+            }
         }
 
         /// <summary>
