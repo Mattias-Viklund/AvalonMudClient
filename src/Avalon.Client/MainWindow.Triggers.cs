@@ -149,7 +149,7 @@ namespace Avalon
                 }
             }
 
-            // Go through the TriggerList which are user defined triggers
+            // Go through the TriggerList which are user defined triggers.
             foreach (var item in App.Settings.ProfileSettings.TriggerList.EnabledEnumerable())
             {
                 // Skip it if it's not global or for this character.

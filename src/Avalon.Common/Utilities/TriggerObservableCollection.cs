@@ -75,7 +75,12 @@ namespace Avalon.Common.Utilities
 
             // We only need the lock while we're creating the temporary snapshot, once
             // that's done we can release and then allow the enumeration to continue.  We
-            // will get the count after the lock and then use it.
+            // will get the count after the lock and then use it.  This will also get gags
+            // because even those the gag is processed from the terminal rendering it also
+            // needs to be processed here in order to redirect the content to other terminals.
+            // When the gag is called from the render process it can be called a number of times
+            // and therefore it doesn't do extra processing there (AvalonEdit makes the call on
+            // which lines get drawn).
             try
             {
                 Lock.EnterUpgradeableReadLock();
