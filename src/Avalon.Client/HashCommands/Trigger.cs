@@ -229,7 +229,6 @@ namespace Avalon.HashCommands
             [Option('s', "stop", Required = false, HelpText = "[true|false] Whether the trigger should stop the processing the remaining lower priority triggers.")]
             public string StopProcessing { get; set; }
 
-
         }
     }
 }

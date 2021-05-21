@@ -2136,6 +2136,76 @@ namespace Avalon.Lua
             });
         }
 
+        /// <summary>
+        /// Adds or replaces a replacement trigger.  A replacement is first identified by ID if provided and falls
+        /// back to pattern if not.
+        /// </summary>
+        /// <param name="replace"></param>
+        /// <param name="replaceWith"></param>
+        /// <param name="id"></param>
+        /// <param name="temp"></param>
+        [Description("Adds or replaces a replacement trigger.  If a replacement the procedure will first search by ID if specified fall back to pattern if not.")]
+        public void AddLineTransformer(string replace, string replaceWith, string id, bool temp = false)
+        {
+            // TODO, needs script host (get new trigger from conveyor, that way it can inject the proper stuff).
+            // TODO, escape input
+            Common.Triggers.Trigger t;
+            string luaCode = $"return \"{replaceWith}\"";
+
+            if (id == null)
+            {
+                t = App.Settings.ProfileSettings.TriggerList.Find(x => x.Pattern.Equals(replace, StringComparison.Ordinal));
+            }
+            else
+            {
+                t = App.Settings.ProfileSettings.TriggerList.Find(x => x.Identifier.Equals(id, StringComparison.Ordinal));
+            }
+
+            if (t == null)
+            {
+                var trigger = new Common.Triggers.Trigger
+                {
+                    Pattern = replace,
+                    Command = luaCode,
+                    Temp = temp,
+                    LineTransformer = true,
+                    IsLua = true,
+                    ExecuteAs = ExecuteType.LuaMoonsharp,
+                    ScriptHost = App.MainWindow.Interp.ScriptHost,
+                    Conveyor = App.Conveyor
+                };
+
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    trigger.Identifier = id;
+                }
+
+                App.Settings.ProfileSettings.TriggerList.Add(trigger);
+            }
+            else
+            {
+                t.Pattern = replace;
+                t.Command = luaCode;
+                t.Temp = temp;
+                t.LineTransformer = true;
+                t.IsLua = true;
+                t.ExecuteAs = ExecuteType.LuaMoonsharp;
+                t.ScriptHost = App.MainWindow.Interp.ScriptHost;
+                t.Conveyor = App.Conveyor;
+            }            
+        }
+
+        /// <summary>
+        /// Deletes a replacement trigger by ID.
+        /// </summary>
+        /// <param name="id"></param>
+        [Description("Deletes replacement trigger by ID.")]
+        public void RemoveLineTransformer(string id)
+        {
+            var t = App.Settings.ProfileSettings.TriggerList.Find(x => x.Identifier.Equals(id, StringComparison.Ordinal));
+            App.Settings.ProfileSettings.TriggerList.Remove(t);
+        }
+
         private readonly IInterpreter _interpreter;
     }
 }

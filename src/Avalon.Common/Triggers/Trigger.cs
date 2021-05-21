@@ -26,6 +26,7 @@ namespace Avalon.Common.Triggers
     {
         public Trigger()
         {
+            this.Identifier = Guid.NewGuid().ToString();
         }
 
         public Trigger(string pattern, string command, string character = "", bool isSilent = false, string identifier = "",
@@ -110,7 +111,7 @@ namespace Avalon.Common.Triggers
             // Save the match for CLR processing if needed.
             this.Match = match;
 
-            if (this.LineTransformer)
+            if (this.LineTransformer && this.ExecuteAs == ExecuteType.LuaMoonsharp)
             {
                 var paramList = new string[match.Groups.Count];
                 paramList[0] = line;
@@ -132,6 +133,11 @@ namespace Avalon.Common.Triggers
                     this.Conveyor.EchoError("The previous exception was from a line transformer trigger.");
                     return false;
                 }
+            }
+            else if (this.LineTransformer && this.ExecuteAs == ExecuteType.Command)
+            {
+                // If this is the route then it will be a 1:1 replacement, no script needs to be run.
+                this.ProcessedCommand = this.Command;
             }
             else
             {
@@ -188,7 +194,7 @@ namespace Avalon.Common.Triggers
 
         }
 
-        private string _identifier = Guid.NewGuid().ToString();
+        private string _identifier;
 
         /// <inheritdoc />
         public string Identifier

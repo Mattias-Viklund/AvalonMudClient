@@ -30,7 +30,7 @@ namespace Avalon
     {
         /// <summary>
         /// These are immutable triggers that are set by the mud client or loaded from a plugin that will be
-        /// isolated from the user defined triggers.  These run before triggers but after replacement triggers.
+        /// isolated from the user defined triggers.  These run before triggers but after line transformer triggers.
         /// </summary>
         public List<Trigger> SystemTriggers { get; set; } = new List<Trigger>();
         

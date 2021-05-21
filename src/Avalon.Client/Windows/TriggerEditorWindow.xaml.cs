@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using System.Windows.Media;
 using Trigger = Avalon.Common.Triggers.Trigger;
 
 namespace Avalon
@@ -118,6 +119,12 @@ namespace Avalon
         /// <param name="e"></param>
         private void ButtonSave_OnClick(object sender, RoutedEventArgs e)
         {
+            if (CheckBoxLineTransformer.IsChecked.GetValueOrDefault(false) && !TextCommand.Text.Contains("return", StringComparison.OrdinalIgnoreCase))
+            {
+                this.StatusText = "A line transformer must have a return statement to be saved.";
+                return;
+            }
+
             try
             {
                 this.Trigger.Pattern = TextPattern.Text;

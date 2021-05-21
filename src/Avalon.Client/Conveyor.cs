@@ -1263,6 +1263,36 @@ namespace Avalon
             }));
         }
 
+        ///// <summary>
+        ///// Returns a trigger object that is initialized with a Conveyor and ScriptHost.
+        ///// </summary>
+        ///// <param name="lua"></param>
+        //public Common.Triggers.Trigger NewTrigger()
+        //{
+        //    // If it has access directly return it.
+        //    if (Application.Current.Dispatcher.CheckAccess())
+        //    {
+        //        return new Common.Triggers.Trigger
+        //        {
+        //            Conveyor = this,
+        //            ScriptHost = App.MainWindow.Interp.ScriptHost
+        //        };
+        //    }
+
+        //    Common.Triggers.Trigger t = null;
+
+        //    Application.Current.Dispatcher.Invoke(() =>
+        //    {
+        //        t = new Common.Triggers.Trigger
+        //        {
+        //            Conveyor = this,
+        //            ScriptHost = App.MainWindow.Interp.ScriptHost
+        //        };
+        //    });
+
+        //    return t;
+        //}
+
         /// <summary>
         /// A StringBuilder for holding scraped data.
         /// </summary>
