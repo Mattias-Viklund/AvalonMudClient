@@ -357,7 +357,6 @@ namespace Avalon
                     // If the alias is Lua then variables will be swapped in if necessary and then executed.
                     if (alias.IsLua || alias.ExecuteAs == ExecuteType.LuaMoonsharp)
                     {
-                        // TODO alias expression or the function name can't have invalid characters or start with a number.
                         list.Clear();
                         _ = this.ScriptHost.MoonSharp.ExecuteFunctionAsync<object>(alias.AliasExpression, alias.Command, item.Split(' ', StringSplitOptions.RemoveEmptyEntries));
 

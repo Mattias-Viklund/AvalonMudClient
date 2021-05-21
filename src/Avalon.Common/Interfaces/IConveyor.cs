@@ -119,8 +119,6 @@ namespace Avalon.Common.Interfaces
 
         void SetCustomTabLabel(CustomTab tab, string label);
 
-        //Common.Triggers.Trigger NewTrigger();
-
         string ProgressBarRepeaterStatusText { get; set; }
 
         bool ProgressBarRepeaterStatusVisible { get; set; }
@@ -128,6 +126,5 @@ namespace Avalon.Common.Interfaces
         WindowPosition GetWindowPosition { get; }
 
         List<IWindow> WindowList { get; set; }
-
     }
 }
