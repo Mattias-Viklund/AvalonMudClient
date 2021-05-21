@@ -173,7 +173,7 @@ namespace Avalon
                         int start = GameTerminal.Document.Text.LastIndexOf(line.FormattedText, StringComparison.Ordinal);
                         GameTerminal.Document.Insert(start, AnsiColors.DarkCyan);
                     }
-                    
+
                     // Only send if it has something in it.  Use the processed command.
                     if (item.ExecuteAs == ExecuteType.Command && !string.IsNullOrEmpty(item.ProcessedCommand))
                     {
@@ -283,12 +283,12 @@ namespace Avalon
         /// <param name="line"></param>
         public void ProcessReplacementTriggers(Line line)
         {
-            if (App.Settings.ProfileSettings.ReplacementTriggersEnabled && App.Settings.ProfileSettings.ReplacementTriggerList.Any())
+            if (App.Settings.ProfileSettings.ReplacementTriggersEnabled)
             {
                 bool found = false;
-                var sb2 = ZString.CreateStringBuilder();
-                
-                foreach (var trigger in App.Settings.ProfileSettings.ReplacementTriggerList)
+                var sb = ZString.CreateStringBuilder();
+
+                foreach (var trigger in App.Settings.ProfileSettings.TriggerList.EnabledLineTransformersEnumerable())
                 {
                     if (!trigger.Enabled)
                     {
@@ -299,53 +299,32 @@ namespace Avalon
                     // do that in IsMatch as it will pass those variables to Lua which should handle them.
                     var match = trigger.IsMatch(line.Text);
 
-                    if (match.TrySuccess())
+                    if (match)
                     {
-                        // We know if it's a success and it's found hasn't been set yet that we wilfl need
+                        // We know if it's a success and it's found hasn't been set yet that we will need
                         // to process it AND the StringBuilder needs to be populated because this is the
                         // first match (of potentially more).  No point in populating the StringBuilder until
                         // we know we're going to need it.
                         if (!found)
                         {
-                            sb2.AppendLine(line.Text);
+                            sb.AppendLine(line.Text);
                         }
 
                         found = true;
 
-                        // If lua function is available, run it, otherwise, do the processed replacement
-                        if (string.IsNullOrWhiteSpace(trigger.OnMatchEvent))
+                        try
                         {
-                            sb2.Replace(match.Value, trigger.ProcessedReplacement);
+                            if (!string.IsNullOrEmpty(trigger.ProcessedCommand))
+                            {
+                                sb.Replace(trigger.Match.Value, trigger.ProcessedCommand);
+                                found = true;
+                            }
                         }
-                        else
+                        catch
                         {
-                            try
-                            {
-                                var paramList = new string[match.Groups.Count];
-                                paramList[0] = line.Text;
-
-                                for (int i = 1; i < match.Groups.Count; i++)
-                                {
-                                    paramList[i] = match.Groups[i].Value;
-                                }
-
-                                // We'll send the function we want to call but also the code, if the code has changed
-                                // it nothing will be reloaded thus saving memory and calls.  This is why replacing %1
-                                // variables is problematic here and why we are forcing the use of Lua varargs (...)
-                                string luaResult = Interp.ScriptHost.MoonSharp.ExecuteFunction<string>(trigger.FunctionName, trigger.OnMatchEvent, paramList);
-
-                                if (!string.IsNullOrEmpty(luaResult))
-                                {
-                                    sb2.Replace(match.Value, luaResult);
-                                    found = true;
-                                }
-                            }
-                            catch
-                            {
-                                // The error handler for the Lua will have already fired, we don't need to do any special
-                                // processing at this juncture other than saying we didn't find anything to replace.
-                                found = false;
-                            }
+                            // The error handler for the Lua will have already fired, we don't need to do any special
+                            // processing at this juncture other than saying we didn't find anything to replace.
+                            found = false;
                         }
                     }
                 }
@@ -362,14 +341,14 @@ namespace Avalon
                     // TODO if entire line is removed it messes up the gag.. figure that out.
                     if (start >= 0)
                     {
-                        Colorizer.MudToAnsiColorCodes(ref sb2);
+                        Colorizer.MudToAnsiColorCodes(ref sb);
                         this.GameTerminal.Document.Remove(start, line.FormattedText.Length + 1);
-                        this.GameTerminal.Document.Insert(start, sb2.ToString());
+                        this.GameTerminal.Document.Insert(start, sb.ToString());
                     }
                 }
 
                 // Return the ZString StringBuilder via Dispose.
-                sb2.Dispose();
+                sb.Dispose();
             }
         }
     }

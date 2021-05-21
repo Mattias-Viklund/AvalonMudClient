@@ -91,8 +91,8 @@ namespace Avalon.Common.Utilities
                 for (int i = 0; i < count; i++)
                 {
                     // Make sure the trigger is a gag and that it's enabled and that
-                    // it actually has a pattern.
-                    if (this[i].Enabled && !string.IsNullOrWhiteSpace(this[i].Pattern))
+                    // it actually has a pattern.  Also, this isn't for LineTransformers.
+                    if (this[i].Enabled && !this[i].LineTransformer && !string.IsNullOrWhiteSpace(this[i].Pattern))
                     {
                         snapshot[found] = this[i];
                         found++;
@@ -114,6 +114,50 @@ namespace Avalon.Common.Utilities
 
             pool.Return(snapshot, true);
         }
+
+        /// <summary>
+        /// Returns an IEnumerable to iterate over only enabled line transformer triggers.
+        /// </summary>
+        public IEnumerable<Trigger> EnabledLineTransformersEnumerable()
+        {
+            int found = 0;
+            var pool = ArrayPool<Trigger>.Shared;
+            Trigger[] snapshot;
+
+            try
+            {
+                Lock.EnterUpgradeableReadLock();
+
+                int count = this.Count;
+                snapshot = pool.Rent(count);
+
+                for (int i = 0; i < count; i++)
+                {
+                    // Make sure the trigger is a gag and that it's enabled and that
+                    // it actually has a pattern.
+                    if (this[i].Enabled && this[i].LineTransformer && !string.IsNullOrWhiteSpace(this[i].Pattern))
+                    {
+                        snapshot[found] = this[i];
+                        found++;
+                    }
+                }
+            }
+            finally
+            {
+                Lock.ExitUpgradeableReadLock();
+            }
+
+            // Since the array returned from the pool could be larger than we requested
+            // we will use the saved count to only iterate over the items we know to be
+            // in the range of the ones we requested.
+            for (int i = 0; i < found; i++)
+            {
+                yield return snapshot[i];
+            }
+
+            pool.Return(snapshot, true);
+        }
+
 
     }
 }

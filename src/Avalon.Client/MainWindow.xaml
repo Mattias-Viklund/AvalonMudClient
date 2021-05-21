@@ -91,7 +91,6 @@
         <KeyBinding Command="local:MainWindow.ShellWindow" Key="M" Modifiers="Ctrl+Alt" CommandParameter="Macros" />
         <KeyBinding Command="local:MainWindow.ShellWindow" Key="V" Modifiers="Ctrl+Alt" CommandParameter="Variables" />
         <KeyBinding Command="local:MainWindow.ShellWindow" Key="D" Modifiers="Ctrl+Alt" CommandParameter="Directions" />
-        <KeyBinding Command="local:MainWindow.ShellWindow" Key="R" Modifiers="Ctrl+Alt" CommandParameter="ReplacementTriggers" />
         <KeyBinding Command="local:MainWindow.FocusByName" Key="I" Modifiers="Ctrl" CommandParameter="TextInput" />
         <KeyBinding Command="local:MainWindow.ShellWindow" Key="D" Modifiers="Ctrl" CommandParameter="Directions Select" />
         <KeyBinding Command="local:MainWindow.LoadPlugin" Key="P" Modifiers="Ctrl+Alt" />
@@ -250,11 +249,6 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Edit _Triggers" Click="MenuShellWindow_Click" Tag="Triggers" InputGestureText="Ctrl+Alt+T">
-                            <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="Directions" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="Edit _Replacement Triggers" Click="MenuShellWindow_Click" Tag="ReplacementTriggers" InputGestureText="Ctrl+Alt+R">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Directions" />
                             </MenuItem.Icon>

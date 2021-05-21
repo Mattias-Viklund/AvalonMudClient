@@ -8,7 +8,9 @@
  */
 
 using Argus.Extensions;
+using Avalon.Common.Interfaces;
 using Avalon.Common.Models;
+using Avalon.Common.Scripting;
 using Cysharp.Text;
 using Newtonsoft.Json;
 using System;
@@ -20,7 +22,7 @@ namespace Avalon.Common.Triggers
     /// <summary>
     /// A trigger is an action that is executed based off of a pattern that is sent from the game.
     /// </summary>
-    public class Trigger : BaseTrigger
+    public class Trigger : ITrigger, ICloneable, INotifyPropertyChanged, IModelInfo
     {
         public Trigger()
         {
@@ -70,7 +72,7 @@ namespace Avalon.Common.Triggers
         }
 
         /// <inheritdoc/>
-        public override bool IsMatch(string line)
+        public virtual bool IsMatch(string line)
         {
             Match match;
 
@@ -108,6 +110,30 @@ namespace Avalon.Common.Triggers
             // Save the match for CLR processing if needed.
             this.Match = match;
 
+            if (this.LineTransformer)
+            {
+                var paramList = new string[match.Groups.Count];
+                paramList[0] = line;
+
+                for (int i = 1; i < match.Groups.Count; i++)
+                {
+                    paramList[i] = match.Groups[i].Value;
+                }
+
+                // We'll send the function we want to call but also the code, if the code has changed
+                // it nothing will be reloaded thus saving memory and calls.  This is why replacing %1
+                // variables is problematic here and why we are forcing the use of Lua varargs (...)
+                try
+                {
+                    this.ProcessedCommand = this.ScriptHost.MoonSharp.ExecuteFunction<string>(this.FunctionName, this.Command, paramList);
+                }
+                catch
+                {
+                    this.Conveyor.EchoError("The previous exception was from a line transformer trigger.");
+                    return false;
+                }
+            }
+            else
             {
                 // This is the block that swaps matched groups into the processed command as the user
                 // has requested (e.g. %0, %1, %2, %3, etc.)
@@ -157,37 +183,27 @@ namespace Avalon.Common.Triggers
             return match.Success;
         }
 
-        public override void Execute()
+        public virtual void Execute()
         {
 
         }
 
-        private string _command = "";
+        private string _identifier = Guid.NewGuid().ToString();
 
-        public new virtual string Command
+        /// <inheritdoc />
+        public string Identifier
         {
-            get => _command;
+            get
+            {
+                return _identifier;
+            }
             set
             {
-                _command = value;
-                OnPropertyChanged(nameof(Command));
+                this.FunctionName = string.Concat("x", value.Replace("-", "").DeleteLeft(1));
+                _identifier = value;
+                OnPropertyChanged(nameof(Identifier));
             }
         }
-
-        /// <summary>
-        /// The command after it's been processed.  This is what should get sent to the game.
-        /// </summary>
-        [JsonIgnore]
-        public string ProcessedCommand { get; private set; } = "";
-
-        /// <summary>
-        /// The text that triggered the trigger.
-        /// </summary>
-        [JsonIgnore]
-        public string TriggeringText { get; private set; } = "";
-
-        [JsonIgnore]
-        public Match Match { get; set; }
 
         private string _pattern = "";
 
@@ -210,6 +226,198 @@ namespace Avalon.Common.Triggers
                 }
             }
         }
+
+        private string _command = "";
+
+        /// <inheritdoc/>
+        public virtual string Command
+        {
+            get => _command;
+            set
+            {
+                _command = value;
+                OnPropertyChanged(nameof(Command));
+            }
+        }
+
+        private string _group = "";
+
+        /// <inheritdoc/>
+        public string Group
+        {
+            get => _group;
+            set
+            {
+                _group = value;
+                OnPropertyChanged(nameof(Group));
+            }
+        }
+
+        private bool _plugin = false;
+
+        /// <inheritdoc/>
+        public bool Plugin
+        {
+            get => _plugin;
+
+            set
+            {
+                if (value != _plugin)
+                {
+                    _plugin = value;
+                    OnPropertyChanged(nameof(Plugin));
+                }
+            }
+        }
+
+        private bool _lock = false;
+
+        /// <inheritdoc/>
+        public bool Lock
+        {
+            get => _lock;
+
+            set
+            {
+                if (value != _lock)
+                {
+                    _lock = value;
+                    OnPropertyChanged(nameof(Lock));
+                }
+            }
+        }
+
+        private bool _enabled = true;
+
+        /// <inheritdoc/>
+        public bool Enabled
+        {
+            get => _enabled;
+            set
+            {
+                _enabled = value;
+                OnPropertyChanged(nameof(Enabled));
+            }
+        }
+
+        private int _count = 0;
+
+        /// <inheritdoc />
+        public int Count
+        {
+            get => _count;
+            set
+            {
+                _count = value;
+                OnPropertyChanged(nameof(Count));
+            }
+        }
+
+        private int _priority = 10000;
+
+        /// <inheritdoc />
+        public int Priority
+        {
+            get => _priority;
+            set
+            {
+                _priority = value;
+                OnPropertyChanged(nameof(Priority));
+            }
+        }
+
+        private string _character = "";
+
+        /// <inheritdoc/>
+        public string Character
+        {
+            get => _character;
+            set
+            {
+                _character = value;
+                OnPropertyChanged(nameof(Character));
+            }
+        }
+
+        private ExecuteType _executeType = ExecuteType.Command;
+
+        /// <inheritdoc/>
+        public ExecuteType ExecuteAs
+        {
+            get => _executeType;
+            set
+            {
+                _executeType = value;
+                OnPropertyChanged(nameof(ExecuteAs));
+            }
+        }
+
+        /// <inheritdoc />
+        [JsonIgnore]
+        public Regex Regex { get; set; }
+
+        /// <inheritdoc />
+        public bool SystemTrigger { get; set; } = false;
+
+        /// <inheritdoc />
+        public string PackageId { get; set; } = "";
+
+        /// <inheritdoc/>
+        public DateTime LastMatched { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// The name of the function for the OnMatchedEvent.
+        /// </summary>
+        [JsonIgnore]
+        public string FunctionName { get; set; }
+
+        /// <inheritdoc />
+        [JsonIgnore]
+        public IConveyor Conveyor { get; set; }
+
+        /// <summary>
+        /// A reference to the scripting environment.
+        /// </summary>
+        [JsonIgnore]
+        public ScriptHost ScriptHost { get; set; }
+
+        private bool _temp = false;
+
+        /// <summary>
+        /// If the trigger is temporary and should not be saved with the profile.
+        /// </summary>
+        public bool Temp
+        {
+            get => _temp;
+            set
+            {
+                _temp = value;
+                OnPropertyChanged(nameof(Temp));
+            }
+        }
+
+        /// <summary>
+        /// Clones the trigger.
+        /// </summary>
+        public object Clone()
+        {
+            return this.MemberwiseClone();
+        }
+
+        /// <summary>
+        /// The command after it's been processed.  This is what should get sent to the game.
+        /// </summary>
+        [JsonIgnore]
+        public string ProcessedCommand { get; private set; } = "";
+
+        /// <summary>
+        /// The text that triggered the trigger.
+        /// </summary>
+        [JsonIgnore]
+        public string TriggeringText { get; private set; } = "";
+
+        [JsonIgnore]
+        public Match Match { get; set; }
 
         private bool _isSilent = false;
 
@@ -281,6 +489,21 @@ namespace Avalon.Common.Triggers
             {
                 _variableReplacement = value;
                 OnPropertyChanged(nameof(VariableReplacement));
+            }
+        }
+
+        private bool _lineTransformer = false;
+
+        /// <summary>
+        /// Whether or not this trigger represents a line transformer.
+        /// </summary>
+        public bool LineTransformer
+        {
+            get => _lineTransformer;
+            set
+            {
+                _lineTransformer = value;
+                OnPropertyChanged(nameof(LineTransformer));
             }
         }
 
@@ -358,6 +581,17 @@ namespace Avalon.Common.Triggers
                 _stopProcessing = value;
                 OnPropertyChanged(nameof(StopProcessing));
             }
+        }
+
+        /// <inheritdoc />
+        public bool IsEmpty()
+        {
+            if (string.IsNullOrWhiteSpace(this.Pattern))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         protected virtual void OnPropertyChanged(string propertyName)

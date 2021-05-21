@@ -113,9 +113,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Update="Controls\Editors\ReplacementTriggerList.xaml">
-      <XamlRuntime>$(DefaultXamlRuntime)</XamlRuntime>
-    </Page>
     <Page Update="Controls\VariableRepeater.xaml">
       <SubType>Designer</SubType>
     </Page>

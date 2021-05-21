@@ -2136,63 +2136,6 @@ namespace Avalon.Lua
             });
         }
 
-        /// <summary>
-        /// Adds or replaces a replacement trigger.  A replacement is first identified by ID if provided and falls
-        /// back to pattern if not.
-        /// </summary>
-        /// <param name="replace"></param>
-        /// <param name="replaceWith"></param>
-        /// <param name="id"></param>
-        /// <param name="temp"></param>
-        [Description("Adds or replaces a replacement trigger.  If a replacement the procedure will first search by ID if specified fall back to pattern if not.")]
-        public void AddReplacementTrigger(string replace, string replaceWith, string id, bool temp = false)
-        {
-            ReplacementTrigger t;
-
-            if (id == null)
-            {
-                t = App.Settings.ProfileSettings.ReplacementTriggerList.Find(x => x.Replacement.Equals(replace, StringComparison.Ordinal));
-            }
-            else
-            {
-                t = App.Settings.ProfileSettings.ReplacementTriggerList.Find(x => x.Id.Equals(id, StringComparison.Ordinal));
-            }
-
-            if (t == null)
-            {
-                var trigger = new ReplacementTrigger
-                {
-                    Pattern = replace,
-                    Replacement = replaceWith,
-                    Temp = temp
-                };
-
-                if (!string.IsNullOrWhiteSpace(id))
-                {
-                    trigger.Id = id;
-                }
-
-                App.Settings.ProfileSettings.ReplacementTriggerList.Add(trigger);
-            }
-            else
-            {
-                t.Pattern = replace;
-                t.Replacement = replaceWith;
-                t.Temp = temp;
-            }
-        }
-
-        /// <summary>
-        /// Deletes a replacement trigger by ID.
-        /// </summary>
-        /// <param name="id"></param>
-        [Description("Deletes replacement trigger by ID.")]
-        public void RemoveReplacementTrigger(string id)
-        {
-            var t = App.Settings.ProfileSettings.ReplacementTriggerList.Find(x => x.Id.Equals(id, StringComparison.Ordinal));
-            App.Settings.ProfileSettings.ReplacementTriggerList.Remove(t);
-        }
-
         private readonly IInterpreter _interpreter;
     }
 }

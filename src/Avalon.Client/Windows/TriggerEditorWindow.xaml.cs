@@ -65,6 +65,7 @@ namespace Avalon
             CheckBoxSilent.IsChecked = trigger.IsSilent;
             CheckBoxDisableAfterTriggered.IsChecked = trigger.DisableAfterTriggered;
             CheckBoxStopProcessing.IsChecked = trigger.StopProcessing;
+            CheckBoxLineTransformer.IsChecked = trigger.LineTransformer;
 
             var dict = new Dictionary<int, string>
             {
@@ -133,6 +134,7 @@ namespace Avalon
                 this.Trigger.IsSilent = (bool)CheckBoxSilent.IsChecked;
                 this.Trigger.DisableAfterTriggered = (bool)CheckBoxDisableAfterTriggered.IsChecked;
                 this.Trigger.StopProcessing = (bool)CheckBoxStopProcessing.IsChecked;
+                this.Trigger.LineTransformer = (bool)CheckBoxLineTransformer.IsChecked;
 
                 // Set it to the default trigger priority if it is NaN.
                 if (double.IsNaN(TextPriority.Value))
@@ -174,7 +176,9 @@ namespace Avalon
                 Text = this.TextCommand.Text
             };
 
-            if (this.Trigger.IsLua)
+            if (this.Trigger.IsLua 
+                || this.Trigger.ExecuteAs == ExecuteType.LuaMoonsharp 
+                || this.Trigger.ExecuteAs == ExecuteType.LuaNLua)
             {
                 win.EditorMode = StringEditor.EditorType.Lua;
             }

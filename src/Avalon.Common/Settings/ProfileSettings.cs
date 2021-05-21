@@ -248,9 +248,6 @@ namespace Avalon.Common.Settings
         [Browsable(false)]
         public FullyObservableCollection<Variable> Variables { get; set; } = new FullyObservableCollection<Variable>();
 
-        [Browsable(false)]
-        public FullyObservableCollection<ReplacementTrigger> ReplacementTriggerList { get; set; } = new FullyObservableCollection<ReplacementTrigger>();
-
         protected virtual void OnPropertyChanged(string propertyName)
         {
             var e = new PropertyChangedEventArgs(propertyName);

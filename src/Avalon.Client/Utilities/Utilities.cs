@@ -49,15 +49,6 @@ namespace Avalon.Utilities
                     }
                 }
             }
-
-            if (App.Settings?.ProfileSettings?.ReplacementTriggerList != null)
-            {
-                foreach (var trigger in App.Settings.ProfileSettings.ReplacementTriggerList)
-                {
-                    trigger.ScriptHost = App.MainWindow.Interp.ScriptHost;
-                }
-            }
-
         }
 
         /// <summary>

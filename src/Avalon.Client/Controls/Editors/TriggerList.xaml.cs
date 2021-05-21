@@ -242,6 +242,11 @@ namespace Avalon.Controls
             {
                 trigger.Conveyor = App.Conveyor;
             }
+
+            if (trigger != null & App.MainWindow.Interp.ScriptHost != null)
+            {
+                trigger.ScriptHost = App.MainWindow.Interp.ScriptHost;
+            }
         }
 
         public void PrimaryButtonClick()
